@@ -1,0 +1,36 @@
+{
+  "manifest_version": 3,
+  "name": "Douban Book Parser",
+  "version": "1.0",
+  "description": "Parse book details from Douban pages",
+  "permissions": [
+    "activeTab",
+    "clipboardWrite",
+    "scripting",
+    "sidePanel",
+    "downloads",
+    "storage"
+  ],
+  "host_permissions": [
+    "https://book.douban.com/subject/*",
+    "https://*.doubanio.com/*",
+    "https://*.nobelpress.org/dashboard/*",
+    "http://localhost:4000/dashboard/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://book.douban.com/subject/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
+  "action": {
+    "default_title": "Open Douban Book Panel"
+  }
+}

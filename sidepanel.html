@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Douban Book Extractor</title>
+    <link rel="stylesheet" href="sidepanel.css" />
+  </head>
+  <body>
+    <div class="container">
+      <header class="header">
+        <div class="header-row">
+          <h1>Douban Book</h1>
+          <span id="pageStatus" class="status">Loading...</span>
+        </div>
+      </header>
+
+      <main class="main">
+        <div id="unsupportedMessage" class="unsupported hidden">
+          <div class="icon">!</div>
+          <p>Navigate to a Douban book page to extract data</p>
+          <a href="https://book.douban.com" target="_blank" class="link"
+            >book.douban.com</a
+          >
+        </div>
+
+        <form id="bookForm" class="form hidden">
+          <!-- Row 1: Subject ID (label + input same row) -->
+          <div class="field-group inline">
+            <label for="subjectId">Subject ID</label>
+            <input type="text" id="subjectId" placeholder="ID" readonly />
+          </div>
+
+          <!-- Row 2: Title (full width) -->
+          <div class="field-group">
+            <label for="title">Title</label>
+            <input type="text" id="title" placeholder="Book title" />
+          </div>
+
+          <!-- Row 3: ISBN + Published (same row) -->
+          <div class="field-row dual">
+            <div class="field-group">
+              <label for="isbn">ISBN</label>
+              <input type="text" id="isbn" placeholder="ISBN" />
+            </div>
+            <div class="field-group">
+              <label for="publishedDate">Published</label>
+              <input type="text" id="publishedDate" placeholder="Date" />
+            </div>
+          </div>
+
+          <!-- Row 4: Form + Pages + Tag Price (same row, in this order) -->
+          <div class="field-row triple">
+            <div class="field-group">
+              <label for="form">Form</label>
+              <input type="text" id="form" placeholder="Format" />
+            </div>
+            <div class="field-group">
+              <label for="pageCount">Pages</label>
+              <input type="text" id="pageCount" placeholder="Count" />
+            </div>
+            <div class="field-group">
+              <label for="tagPrice">Tag Price</label>
+              <input type="text" id="tagPrice" placeholder="Price" />
+            </div>
+          </div>
+
+          <!-- Row 5: Publisher (full width) -->
+          <div class="field-group">
+            <label for="publisher">Publisher</label>
+            <input type="text" id="publisher" placeholder="Publisher" />
+          </div>
+
+          <!-- Row 6: Cover URL -->
+          <div class="field-group">
+            <label for="coverImageUrl">Cover URL</label>
+            <div class="input-with-action">
+              <input type="text" id="coverImageUrl" placeholder="Image URL" />
+              <button
+                type="button"
+                id="previewCoverBtn"
+                class="btn-icon"
+                title="Preview cover"
+              >
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg>
+              </button>
+            </div>
+            <img
+              id="coverPreview"
+              class="preview-image hidden"
+              src=""
+              alt="cover preview"
+            />
+          </div>
+        </form>
+      </main>
+
+      <!-- Sticky bottom actions -->
+      <footer class="actions-bar">
+        <div class="dropdown">
+          <button type="button" id="copyBtn" class="btn btn-primary">
+            Copy <span class="caret">^</span>
+          </button>
+          <div id="copyDropdown" class="dropdown-menu hidden">
+            <div class="dropdown-item" data-format="md">
+              <span class="item-icon">Md</span>
+              <div class="item-info">
+                <span class="item-label">Markdown</span>
+                <span class="item-desc">Pipe table format</span>
+              </div>
+            </div>
+            <div class="dropdown-item" data-format="html">
+              <span class="item-icon">&lt;&gt;</span>
+              <div class="item-info">
+                <span class="item-label">&lt;dl&gt; HTML</span>
+                <span class="item-desc">Definition list markup</span>
+              </div>
+            </div>
+            <div class="dropdown-item" data-format="json">
+              <span class="item-icon">{ }</span>
+              <div class="item-info">
+                <span class="item-label">JSON</span>
+                <span class="item-desc">Structured object</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <button type="button" id="downloadCoverBtn" class="btn btn-secondary">
+          Save Cover
+        </button>
+        <div id="notification" class="notification hidden"></div>
+      </footer>
+    </div>
+
+    <script src="sidepanel.js"></script>
+  </body>
+</html>
