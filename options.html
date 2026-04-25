@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Douban Book Parser - Settings</title>
+    <link rel="stylesheet" href="options.css" />
+  </head>
+  <body>
+    <div class="container">
+      <header class="header">
+        <h1>Settings</h1>
+        <p class="subtitle">Configure remote endpoint for data export</p>
+      </header>
+
+      <main class="main">
+        <form id="optionsForm" class="form">
+          <div class="field-group">
+            <label for="remoteUrl">Remote URL</label>
+            <input
+              type="url"
+              id="remoteUrl"
+              placeholder="https://api.example.com/webhook"
+              required
+            />
+            <span class="hint">POST endpoint to receive book data</span>
+          </div>
+
+          <div class="field-group">
+            <label for="authToken">Authorization Token</label>
+            <input
+              type="password"
+              id="authToken"
+              placeholder="Enter your token"
+              required
+            />
+            <span class="hint"
+              >Token sent as Bearer token in Authorization header</span
+            >
+          </div>
+
+          <div class="actions">
+            <button type="submit" id="saveBtn" class="btn btn-primary">
+              Save Settings
+            </button>
+            <button type="button" id="testBtn" class="btn btn-secondary">
+              Test Connection
+            </button>
+          </div>
+        </form>
+
+        <div id="status" class="status hidden"></div>
+      </main>
+    </div>
+
+    <script src="options.js"></script>
+  </body>
+</html>

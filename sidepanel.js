@@ -15,10 +15,17 @@ const elements = {
   copyBtn: null,
   copyDropdown: null,
   downloadCoverBtn: null,
+  settingsBtn: null,
+  sendBtn: null,
   bookForm: null,
   unsupportedMessage: null,
   pageStatus: null,
   notification: null,
+};
+
+const STORAGE_KEYS = {
+  remoteUrl: "remoteUrl",
+  authToken: "authToken",
 };
 
 let currentTabId = null;
@@ -40,6 +47,8 @@ const initElements = () => {
   elements.copyBtn = document.getElementById("copyBtn");
   elements.copyDropdown = document.getElementById("copyDropdown");
   elements.downloadCoverBtn = document.getElementById("downloadCoverBtn");
+  elements.settingsBtn = document.getElementById("settingsBtn");
+  elements.sendBtn = document.getElementById("sendBtn");
   elements.bookForm = document.getElementById("bookForm");
   elements.unsupportedMessage = document.getElementById("unsupportedMessage");
   elements.pageStatus = document.getElementById("pageStatus");
@@ -659,9 +668,100 @@ const initEventListeners = () => {
   });
 };
 
+// ─── Settings & Send ───────────────────────────────────────────────────────
+
+const openSettings = () => {
+  window.open("options.html", "_blank");
+};
+
+const sendToRemote = async () => {
+  const data = getFormData();
+
+  // Validate data exists
+  if (!data.title && !data.subjectId) {
+    showNotification("No book data to send", "error");
+    return;
+  }
+
+  // Get config from storage
+  let config;
+  try {
+    const result = await chrome.storage.sync.get([
+      STORAGE_KEYS.remoteUrl,
+      STORAGE_KEYS.authToken,
+    ]);
+    config = {
+      url: result[STORAGE_KEYS.remoteUrl],
+      token: result[STORAGE_KEYS.authToken],
+    };
+  } catch (err) {
+    showNotification("Failed to load settings", "error");
+    return;
+  }
+
+  if (!config.url) {
+    showNotification("Configure remote URL in settings", "error");
+    openSettings();
+    return;
+  }
+
+  if (!config.token) {
+    showNotification("Configure token in settings", "error");
+    openSettings();
+    return;
+  }
+
+  // Disable send button during request
+  elements.sendBtn.disabled = true;
+  elements.sendBtn.textContent = "Sending...";
+
+  try {
+    const response = await fetch(config.url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${config.token}`,
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (response.ok) {
+      showNotification("Data sent successfully!", "success");
+    } else if (response.status === 401) {
+      // Clear invalid token
+      await chrome.storage.sync.remove(STORAGE_KEYS.authToken);
+      showNotification(
+        "Unauthorized - token cleared. Reconfigure in settings.",
+        "error",
+      );
+      openSettings();
+    } else {
+      showNotification(
+        `Error: ${response.status} ${response.statusText}`,
+        "error",
+      );
+    }
+  } catch (err) {
+    if (err.message.includes("Failed to fetch")) {
+      showNotification("Network error: check URL in settings", "error");
+    } else {
+      showNotification("Failed to send: " + err.message, "error");
+    }
+  } finally {
+    elements.sendBtn.disabled = false;
+    elements.sendBtn.textContent = "Send";
+  }
+};
+
+const initSettingsAndSend = () => {
+  elements.settingsBtn?.addEventListener("click", openSettings);
+  elements.sendBtn?.addEventListener("click", sendToRemote);
+};
+
 const init = () => {
   initElements();
   initEventListeners();
+  initSettingsAndSend();
   handleTabSwitch();
 };
 
