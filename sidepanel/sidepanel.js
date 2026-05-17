@@ -112,6 +112,19 @@ const updateCoverPreview = (url) => {
 
 const sanitizePrice = (value) => value.replace(/[^0-9.]/g, "");
 
+const injectContentScript = async (tabId) => {
+  try {
+    await chrome.scripting.executeScript({
+      target: { tabId },
+      files: ["content.js"],
+    });
+    return true;
+  } catch (err) {
+    console.warn("Content script injection failed:", err);
+    return false;
+  }
+};
+
 // ─── Format Generators ──────────────────────────────────────────────────────
 
 const formatAsMarkdown = (data) => {
@@ -537,12 +550,25 @@ const showForm = () => {
 
 const loadBookData = async (tabId) => {
   currentTabId = tabId;
-  try {
-    const response = await new Promise((resolve) => {
+
+  const requestBookData = async () => {
+    return new Promise((resolve) => {
       chrome.tabs.sendMessage(tabId, { action: "getBookData" }, (res) => {
-        resolve(chrome.runtime.lastError ? null : res);
+        resolve({ res, error: chrome.runtime.lastError });
       });
     });
+  };
+
+  try {
+    let { res: response, error } = await requestBookData();
+
+    if (!response && error) {
+      const injected = await injectContentScript(tabId);
+      if (injected) {
+        ({ res: response, error } = await requestBookData());
+      }
+    }
+
     if (response) {
       if (response.tagPrice) {
         response.tagPrice = sanitizePrice(response.tagPrice);
@@ -554,6 +580,12 @@ const loadBookData = async (tabId) => {
     } else {
       isOnDoubanPage = true;
       updatePageStatus();
+      if (error) {
+        console.warn(
+          "No content script response on Douban page after injection:",
+          error,
+        );
+      }
     }
   } catch (err) {
     console.error("Failed to load book data:", err);
@@ -679,7 +711,7 @@ const initEventListeners = () => {
 // ─── Settings & Send ───────────────────────────────────────────────────────
 
 const openSettings = () => {
-  window.open("../options/options.html", "_blank");
+  chrome.runtime.openOptionsPage();
 };
 
 const sendToRemote = async () => {

@@ -29,10 +29,10 @@
     }
   ],
   "side_panel": {
-    "default_path": "./sidepanel/sidepanel.html"
+    "default_path": "sidepanel/sidepanel.html"
   },
   "action": {
     "default_title": "Open Douban Book Panel"
   },
-  "options_page": "./options/options.html"
+  "options_page": "options/options.html"
 }
