@@ -68,7 +68,7 @@ const getFormData = () => ({
 });
 
 const formatPublishedAt = (data) => {
-  const [year, month] = data.split("-");
+  const [year, month] = data.slice(0, 7).split("-");
 
   return `${year}-${month.padStart(2, "0")}`;
 };
@@ -413,44 +413,7 @@ const downloadCoverImage = async () => {
 
   showNotification("Downloading...", "success");
 
-  // ── Attempt 1: Try canvas extraction (works for same-origin images) ───────
-  const extractResult = await extractImageFromPage(currentTabId, coverImageUrl);
-
-  if (extractResult.dataUrl) {
-    try {
-      const downloadId = await new Promise((resolve, reject) => {
-        chrome.downloads.download(
-          {
-            url: extractResult.dataUrl,
-            filename: fileName,
-            saveAs: false,
-            conflictAction: "uniquify",
-          },
-          (id) => {
-            if (chrome.runtime.lastError) {
-              reject(new Error(chrome.runtime.lastError.message));
-            } else if (!id) {
-              reject(new Error("Download failed: no download ID"));
-            } else {
-              resolve(id);
-            }
-          },
-        );
-      });
-      showNotification("Cover saved (from page)!", "success");
-      return;
-    } catch (err) {
-      console.error("Canvas dataURL download failed:", err);
-    }
-  }
-
-  if (extractResult.error === "CORS_TAINTED") {
-    console.log("Canvas tainted by CORS, trying XHR fetch");
-  } else if (extractResult.error) {
-    console.warn("Canvas extraction failed:", extractResult.error);
-  }
-
-  // ── Attempt 2: XMLHttpRequest in content script ────────────────────────────
+  // ── Attempt 1: XMLHttpRequest in content script ────────────────────────────
   const xhrResult = await fetchImageViaXHR(currentTabId, coverImageUrl);
 
   if (xhrResult.dataUrl) {
@@ -487,6 +450,43 @@ const downloadCoverImage = async () => {
       xhrResult.error,
       xhrResult.status || xhrResult.message,
     );
+  }
+
+  // ── Attempt 2: Try canvas extraction (works for same-origin images) ───────
+  const extractResult = await extractImageFromPage(currentTabId, coverImageUrl);
+
+  if (extractResult.dataUrl) {
+    try {
+      const downloadId = await new Promise((resolve, reject) => {
+        chrome.downloads.download(
+          {
+            url: extractResult.dataUrl,
+            filename: fileName,
+            saveAs: false,
+            conflictAction: "uniquify",
+          },
+          (id) => {
+            if (chrome.runtime.lastError) {
+              reject(new Error(chrome.runtime.lastError.message));
+            } else if (!id) {
+              reject(new Error("Download failed: no download ID"));
+            } else {
+              resolve(id);
+            }
+          },
+        );
+      });
+      showNotification("Cover saved (from page)!", "success");
+      return;
+    } catch (err) {
+      console.error("Canvas dataURL download failed:", err);
+    }
+  }
+
+  if (extractResult.error === "CORS_TAINTED") {
+    console.warn("Canvas tainted by CORS");
+  } else if (extractResult.error) {
+    console.warn("Canvas extraction failed:", extractResult.error);
   }
 
   // ── Attempt 3: Background service worker with referer hack ───────────────
@@ -616,32 +616,13 @@ const initSelectAllOnFocus = () => {
   const inputs = elements.bookForm?.querySelectorAll("input");
   inputs?.forEach((input) => {
     input.addEventListener("focus", () => {
-      setTimeout(() => input.select(), 10);
+      if (input.readOnly) {
+        navigator.clipboard.writeText(input.value).catch(() => {});
+      }
+
+      requestAnimationFrame(() => input.select());
     });
   });
-};
-
-// ─── Subject ID Click to Copy ───────────────────────────────────────────────
-
-const initSubjectIdCopy = () => {
-  elements.subjectId?.addEventListener("click", async () => {
-    const value = elements.subjectId.value;
-    if (!value) return;
-    try {
-      await navigator.clipboard.writeText(value);
-      showNotification("Subject ID copied!", "success");
-    } catch (err) {
-      const textarea = document.createElement("textarea");
-      textarea.value = value;
-      textarea.style.cssText = "position:fixed;opacity:0;";
-      document.body.appendChild(textarea);
-      textarea.select();
-      document.execCommand("copy");
-      document.body.removeChild(textarea);
-      showNotification("Subject ID copied!", "success");
-    }
-  });
-  elements.subjectId.style.cursor = "pointer";
 };
 
 // ─── Price Input Sanitization ───────────────────────────────────────────────
@@ -680,7 +661,6 @@ chrome.runtime.onMessage.addListener((request) => {
 const initEventListeners = () => {
   initDropdown();
   initSelectAllOnFocus();
-  initSubjectIdCopy();
   initPriceSanitization();
 
   elements.downloadCoverBtn?.addEventListener("click", downloadCoverImage);

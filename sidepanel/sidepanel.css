@@ -184,6 +184,10 @@ body {
     box-shadow 0.2s;
 }
 
+.field-group input:hover {
+  border-color: var(--focus-ring);
+}
+
 .field-group input:focus {
   outline: none;
   border-color: var(--focus-ring);
@@ -196,7 +200,7 @@ body {
 }
 
 .field-group input[readonly]:hover {
-  border-color: var(--accent);
+  border-color: var(--text-muted);
 }
 
 /* Row layouts */

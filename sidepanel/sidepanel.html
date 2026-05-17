@@ -28,25 +28,32 @@
         <form id="bookForm" class="form hidden">
           <!-- Row 1: Subject ID (label + input same row) -->
           <div class="field-group inline">
-            <label for="subjectId">Subject ID</label>
-            <input type="text" id="subjectId" placeholder="ID" readonly />
+            <label for="subjectId">豆瓣 ID</label>
+            <input
+              id="subjectId"
+              placeholder="ID"
+              readonly
+              style="text-align: end"
+            />
           </div>
+
+          <br />
 
           <!-- Row 2: Title (full width) -->
           <div class="field-group">
             <label for="title">Title</label>
-            <input type="text" id="title" placeholder="Book title" />
+            <input id="title" placeholder="Book title" />
           </div>
 
           <!-- Row 3: ISBN + Published (same row) -->
           <div class="field-row dual">
             <div class="field-group">
               <label for="isbn">ISBN</label>
-              <input type="text" id="isbn" placeholder="ISBN" />
+              <input id="isbn" placeholder="ISBN" />
             </div>
             <div class="field-group">
               <label for="publishedDate">Published</label>
-              <input type="text" id="publishedDate" placeholder="Date" />
+              <input id="publishedDate" placeholder="Date" />
             </div>
           </div>
 
@@ -54,36 +61,38 @@
           <div class="field-row triple">
             <div class="field-group">
               <label for="form">Form</label>
-              <input type="text" id="form" placeholder="Format" />
+              <input id="form" placeholder="Format" />
             </div>
             <div class="field-group">
               <label for="pageCount">Pages</label>
-              <input type="text" id="pageCount" placeholder="Count" />
+              <input id="pageCount" placeholder="Count" />
             </div>
             <div class="field-group">
               <label for="tagPrice">Tag Price</label>
-              <input type="text" id="tagPrice" placeholder="Price" />
+              <input id="tagPrice" placeholder="Price" />
             </div>
           </div>
 
           <!-- Row 5: Publisher (full width) -->
           <div class="field-group">
             <label for="publisher">Publisher</label>
-            <input type="text" id="publisher" placeholder="Publisher" />
+            <input id="publisher" placeholder="Publisher" />
           </div>
+
+          <br />
 
           <!-- Row 6: Cover URL -->
           <div class="field-group">
             <label for="coverImageUrl">Cover URL</label>
 
             <div class="input-with-action">
-              <input type="text" id="coverImageUrl" placeholder="Image URL" />
+              <input readonly id="coverImageUrl" placeholder="Image URL" />
 
               <button
+                title="预览"
                 id="previewCoverBtn"
                 type="button"
                 class="btn-icon"
-                title="Preview cover"
               >
                 <svg
                   width="16"
@@ -102,7 +111,7 @@
                 title="下载"
                 id="downloadCoverBtn"
                 type="button"
-                class="btn btn-secondary"
+                class="btn-icon"
               >
                 📥
               </button>
