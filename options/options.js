@@ -37,15 +37,20 @@ const loadOptions = async () => {
       STORAGE_KEYS.remoteUrl,
       STORAGE_KEYS.authToken,
     ]);
-    elements.remoteUrl.value = result[STORAGE_KEYS.remoteUrl] || "";
-    elements.authToken.value = result[STORAGE_KEYS.authToken] || "";
+    const {
+      [STORAGE_KEYS.remoteUrl]: remoteUrl = "",
+      [STORAGE_KEYS.authToken]: authToken = "",
+    } = result;
+
+    elements.remoteUrl.value = remoteUrl;
+    elements.authToken.value = authToken;
   } catch (err) {
     console.error("Failed to load options:", err);
   }
 };
 
-const saveOptions = async (e) => {
-  e.preventDefault();
+const saveOptions = async (event) => {
+  event.preventDefault();
 
   const remoteUrl = elements.remoteUrl.value.trim();
   const authToken = elements.authToken.value.trim();
@@ -67,7 +72,7 @@ const saveOptions = async (e) => {
     });
     showStatus("Settings saved successfully!", "success");
   } catch (err) {
-    showStatus("Failed to save settings: " + err.message, "error");
+    showStatus(`Failed to save settings: ${err.message}`, "error");
   }
 };
 
@@ -94,7 +99,6 @@ const testConnection = async () => {
     });
 
     if (response.ok || response.status === 405) {
-      // 405 Method Not Allowed is OK - means endpoint exists
       showStatus("Connection successful! (endpoint responded)", "success");
     } else {
       showStatus(
@@ -106,7 +110,7 @@ const testConnection = async () => {
     if (err.message.includes("Failed to fetch")) {
       showStatus("Connection failed: invalid URL or network error", "error");
     } else {
-      showStatus("Connection failed: " + err.message, "error");
+      showStatus(`Connection failed: ${err.message}`, "error");
     }
   } finally {
     elements.testBtn.disabled = false;
