@@ -123,6 +123,12 @@ const testConnection = async () => {
 
   elements.testBtn.disabled = true;
   elements.testBtn.textContent = "Testing...";
+  showStatus("Dispatching...", "info");
+
+  // Brief delay so "dispatching" is visible before async work
+  await new Promise((r) => setTimeout(r, 200));
+
+  showStatus("Waiting for response...", "info");
 
   try {
     const response = await fetch(remoteUrl, {

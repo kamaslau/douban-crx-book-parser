@@ -86,6 +86,10 @@ body {
   margin-bottom: 1.5rem;
 }
 
+.section-fieldset .field-group:last-child {
+  margin-bottom: 0;
+}
+
 .section-fieldset legend {
   font-size: 0.875rem;
   font-weight: 600;
@@ -149,4 +153,10 @@ body {
 .status.error {
   background: #fde7e7;
   color: #a80000;
+}
+
+.status.info {
+  background: #e5f0ff;
+  color: #004080;
+}
 }
