@@ -22,6 +22,7 @@ const elements = {
   unsupportedMessage: null,
   pageStatus: null,
   notification: null,
+  uploadedUrl: null,
 };
 
 const STORAGE_KEYS = {
@@ -56,6 +57,7 @@ const initElements = () => {
   elements.unsupportedMessage = document.getElementById("unsupportedMessage");
   elements.pageStatus = document.getElementById("pageStatus");
   elements.notification = document.getElementById("notification");
+  elements.uploadedUrl = document.getElementById("uploadedUrl");
 };
 
 const getFormData = () => ({
@@ -694,7 +696,10 @@ const uploadCoverImage = async () => {
     );
 
     if (success) {
-      showNotification(`Uploaded: ${dir}${fileName}`, "success");
+      const path = `${dir}${fileName}`;
+      showNotification("Upload Succeed", "success");
+      elements.uploadedUrl.value = path;
+      elements.uploadedUrl.classList.remove("hidden");
     } else {
       showNotification("Upload failed: server rejected", "error");
     }

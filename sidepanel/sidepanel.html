@@ -117,24 +117,29 @@
               </button>
             </div>
 
-            <img
-              id="coverPreview"
-              class="preview-image hidden"
-              alt="cover preview"
-              src=""
-            />
+            <figure>
+              <img
+                id="coverPreview"
+                class="preview-image hidden"
+                alt="cover preview"
+                src=""
+              />
+              <figcaption>
+                <input
+                  id="uploadedUrl"
+                  class="uploaded-url hidden"
+                  readonly
+                  placeholder="Uploaded path"
+                />
+              </figcaption>
+            </figure>
           </div>
         </form>
       </main>
 
       <!-- Sticky bottom actions -->
       <footer class="actions-bar">
-        <button
-          type="button"
-          id="settingsBtn"
-          class="btn btn-icon"
-          title="Settings"
-        >
+        <button type="button" id="settingsBtn" class="btn" title="Settings">
           ⚙️
         </button>
 
@@ -151,14 +156,14 @@
               </div>
             </div>
             <div class="dropdown-item" data-format="html">
-              <span class="item-icon">&lt;&gt;</span>
+              <span class="item-icon">&lt;dl&gt;</span>
               <div class="item-info">
-                <span class="item-label">&lt;dl&gt; HTML</span>
+                <span class="item-label">HTML</span>
                 <span class="item-desc">Definition list markup</span>
               </div>
             </div>
             <div class="dropdown-item" data-format="json">
-              <span class="item-icon">{ }</span>
+              <span class="item-icon">{...}</span>
               <div class="item-info">
                 <span class="item-label">JSON</span>
                 <span class="item-desc">Structured object</span>
