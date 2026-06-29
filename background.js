@@ -2,6 +2,19 @@
 
 chrome.runtime.onInstalled.addListener(async () => {
   await chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true });
+
+  chrome.contextMenus.create({
+    id: "saveCoverImage",
+    title: "Save Cover Image",
+    contexts: ["image"],
+    documentUrlPatterns: ["chrome-extension://*/sidepanel/*"],
+  });
+});
+
+chrome.contextMenus.onClicked.addListener((info) => {
+  if (info.menuItemId === "saveCoverImage") {
+    chrome.runtime.sendMessage({ action: "saveCoverFromContextMenu" });
+  }
 });
 
 const isDoubanBookPage = (url) =>
@@ -43,42 +56,56 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 
   if (action === "downloadImage") {
-    handleImageDownload(request.dataUrl, request.fileName)
-      .then(() => sendResponse({ success: true }))
-      .catch((err) => sendResponse({ error: err.message }));
+    (async () => {
+      try {
+        await handleImageDownload(request.dataUrl, request.fileName);
+        sendResponse({ success: true });
+      } catch (err) {
+        sendResponse({ error: err.message });
+      }
+    })();
     return true;
   }
 
   if (action === "fetchImageBlob") {
-    fetchImageAsDataURL(request.url)
-      .then((dataUrl) => sendResponse({ dataUrl }))
-      .catch((err) => sendResponse({ error: err.name, message: err.message }));
+    (async () => {
+      try {
+        const dataUrl = await fetchImageAsDataURL(request.url, request.referer);
+        sendResponse({ dataUrl });
+      } catch (err) {
+        sendResponse({ error: err.name, message: err.message });
+      }
+    })();
     return true;
   }
 
   if (action === "extractImageFromPage") {
-    chrome.scripting
-      .executeScript({
-        target: { tabId: request.tabId },
-        func: (imgUrl) => {
-          const img = Array.from(document.images).find((i) => {
-            if (i.src === imgUrl) return true;
-            const normalized = imgUrl.replace(/^https?:\/\//, "");
-            return i.src.includes(normalized);
-          });
-          if (!img) return null;
+    (async () => {
+      try {
+        const [result] = await chrome.scripting.executeScript({
+          target: { tabId: request.tabId },
+          func: (imgUrl) => {
+            const img = Array.from(document.images).find((i) => {
+              if (i.src === imgUrl) return true;
+              const normalized = imgUrl.replace(/^https?:\/\//, "");
+              return i.src.includes(normalized);
+            });
+            if (!img) return null;
 
-          const canvas = document.createElement("canvas");
-          canvas.width = img.naturalWidth || img.width;
-          canvas.height = img.naturalHeight || img.height;
-          const ctx = canvas.getContext("2d");
-          ctx.drawImage(img, 0, 0);
-          return canvas.toDataURL("image/jpeg", 0.92);
-        },
-        args: [request.imgUrl],
-      })
-      .then(([result]) => sendResponse({ dataUrl: result?.result }))
-      .catch((err) => sendResponse({ error: err.message }));
+            const canvas = document.createElement("canvas");
+            canvas.width = img.naturalWidth || img.width;
+            canvas.height = img.naturalHeight || img.height;
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(img, 0, 0);
+            return canvas.toDataURL("image/jpeg", 0.92);
+          },
+          args: [request.imgUrl],
+        });
+        sendResponse({ dataUrl: result?.result });
+      } catch (err) {
+        sendResponse({ error: err.message });
+      }
+    })();
     return true;
   }
 });
@@ -91,14 +118,31 @@ const handleImageDownload = async (dataUrl, fileName) => {
   });
 };
 
+// Last frozen Chrome desktop UA string (stable channel, pre-UA-CH freeze).
+// Modern browsers no longer send variable UA strings; this fixed value helps
+// bypass image CDNs that reject headless/service-worker requests.
+const FROZEN_UA =
+  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36";
+
 /**
  * Fetch image in service worker context and convert to dataURL.
  * Service worker has different CORS permissions than content scripts.
+ *
+ * @param {string} url     - Image URL to fetch
+ * @param {string} [referer] - Optional Referer header (helps CDNs that whitelist referrers)
  */
-const fetchImageAsDataURL = async (url) => {
+const fetchImageAsDataURL = async (url, referer) => {
+  const headers = {
+    "User-Agent": FROZEN_UA,
+  };
+  if (referer) {
+    headers["Referer"] = referer;
+  }
+
   const response = await fetch(url, {
     mode: "cors",
     credentials: "omit",
+    headers,
   });
 
   if (!response.ok) {

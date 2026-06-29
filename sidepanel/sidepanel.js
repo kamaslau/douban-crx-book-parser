@@ -31,6 +31,7 @@ const STORAGE_KEYS = {
 let currentTabId = null;
 let lastValidBookData = null;
 let isOnDoubanPage = false;
+let _initializing = true;
 
 const initElements = () => {
   elements.title = document.getElementById("title");
@@ -68,12 +69,16 @@ const getFormData = () => ({
 });
 
 const formatPublishedAt = (data) => {
-  const [year, month] = data.slice(0, 7).split("-");
+  if (!data) return "";
 
-  return `${year}-${month.padStart(2, "0")}`;
+  const parts = data.slice(0, 7).split("-");
+  const year = parts[0] ?? "";
+  const month = parts[1] ? parts[1].padStart(2, "0") : "";
+
+  return month ? `${year}-${month}` : year;
 };
 
-const populateInputs = (data) => {
+const populateInputs = async (data) => {
   if (!data) return;
   lastValidBookData = { ...data };
 
@@ -90,24 +95,40 @@ const populateInputs = (data) => {
   elements.tagPrice.value = data.tagPrice || "";
 
   if (data.coverImageUrl) {
-    updateCoverPreview(data.coverImageUrl);
+    await updateCoverPreview(data.coverImageUrl);
   } else {
     elements.coverPreview.src = "";
     elements.coverPreview.classList.add("hidden");
   }
 };
 
-const updateCoverPreview = (url) => {
+const updateCoverPreview = async (url) => {
   if (!url) {
     elements.coverPreview.src = "";
     elements.coverPreview.classList.add("hidden");
     return;
   }
+
+  // Show loading state
+  elements.coverPreview.classList.add("hidden");
+
+  // Fetch via content script injected into the page, so Referer is automatic
+  if (currentTabId) {
+    const result = await fetchImageViaFetch(currentTabId, url);
+    if (result.dataUrl) {
+      elements.coverPreview.src = result.dataUrl;
+      elements.coverPreview.classList.remove("hidden");
+      elements.coverPreview.onerror = null;
+      elements.coverPreview.title = "Click to save cover image";
+      return;
+    }
+  }
+
+  // Fallback: try direct load (works for cached or same-origin images)
+  elements.coverPreview.onerror = () =>
+    elements.coverPreview.classList.add("hidden");
   elements.coverPreview.src = url;
   elements.coverPreview.classList.remove("hidden");
-  elements.coverPreview.onerror = () => {
-    elements.coverPreview.classList.add("hidden");
-  };
 };
 
 const sanitizePrice = (value) => value.replace(/[^0-9.]/g, "");
@@ -212,28 +233,8 @@ const copyToClipboard = async (format) => {
       format === "html" ? "HTML" : format === "json" ? "JSON" : "Markdown";
     showNotification(`${label} copied!`, "success");
   } catch (err) {
-    fallbackCopyToClipboard(text, format);
-  }
-};
-
-const fallbackCopyToClipboard = (text, format) => {
-  const textarea = document.createElement("textarea");
-  textarea.value = text;
-  textarea.style.cssText = "position:fixed;opacity:0;";
-  document.body.appendChild(textarea);
-  textarea.select();
-  try {
-    const success = document.execCommand("copy");
-    const label =
-      format === "html" ? "HTML" : format === "json" ? "JSON" : "Markdown";
-    showNotification(
-      success ? `${label} copied!` : "Failed to copy",
-      success ? "success" : "error",
-    );
-  } catch (err) {
     showNotification("Failed to copy", "error");
   }
-  document.body.removeChild(textarea);
 };
 
 // ─── Dropdown Logic ─────────────────────────────────────────────────────────
@@ -324,46 +325,34 @@ const extractImageFromPage = async (tabId, imgUrl) => {
 };
 
 /**
- * Use XMLHttpRequest in content script to fetch image as blob.
- * XHR sometimes bypasses fetch() restrictions.
+ * Use fetch() in content script to get image as blob, then convert to dataURL.
  */
-const fetchImageViaXHR = async (tabId, imgUrl) => {
+const fetchImageViaFetch = async (tabId, imgUrl) => {
   try {
     const [result] = await chrome.scripting.executeScript({
       target: { tabId },
-      func: (targetUrl) => {
-        return new Promise((resolve) => {
-          const xhr = new XMLHttpRequest();
-          xhr.open("GET", targetUrl, true);
-          xhr.responseType = "blob";
-
-          xhr.onload = function () {
-            if (xhr.status === 200) {
-              const reader = new FileReader();
-              reader.onloadend = () => resolve({ dataUrl: reader.result });
-              reader.onerror = () => resolve({ error: "FILEREADER_ERROR" });
-              reader.readAsDataURL(xhr.response);
-            } else {
-              resolve({
-                error: "XHR_FAILED",
-                status: xhr.status,
-                statusText: xhr.statusText,
-              });
-            }
-          };
-
-          xhr.onerror = () =>
-            resolve({ error: "XHR_ERROR", message: "Network error" });
-          xhr.ontimeout = () => resolve({ error: "XHR_TIMEOUT" });
-
-          // Set headers to mimic normal browser request
-          xhr.setRequestHeader(
-            "Accept",
-            "image/avif,image/webp,image/apng,image/*,*/*;q=0.8",
-          );
-
-          xhr.send();
-        });
+      func: async (targetUrl) => {
+        try {
+          const response = await fetch(targetUrl, {
+            signal: AbortSignal.timeout(15000),
+          });
+          if (!response.ok) {
+            return {
+              error: "FETCH_FAILED",
+              status: response.status,
+              statusText: response.statusText,
+            };
+          }
+          const blob = await response.blob();
+          return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve({ dataUrl: reader.result });
+            reader.onerror = () => resolve({ error: "FILEREADER_ERROR" });
+            reader.readAsDataURL(blob);
+          });
+        } catch (err) {
+          return { error: "FETCH_ERROR", message: err.message };
+        }
       },
       args: [imgUrl],
     });
@@ -371,7 +360,7 @@ const fetchImageViaXHR = async (tabId, imgUrl) => {
     return (
       result?.result || {
         error: "INJECTION_FAILED",
-        message: "No result from XHR script",
+        message: "No result from fetch script",
       }
     );
   } catch (err) {
@@ -385,7 +374,7 @@ const fetchImageViaXHR = async (tabId, imgUrl) => {
 const fetchImageViaBackground = async (imgUrl, referer) => {
   return new Promise((resolve) => {
     chrome.runtime.sendMessage(
-      { action: "fetchImageXHR", url: imgUrl, referer },
+      { action: "fetchImageBlob", url: imgUrl, referer },
       (response) => {
         if (chrome.runtime.lastError) {
           resolve({
@@ -413,15 +402,15 @@ const downloadCoverImage = async () => {
 
   showNotification("Downloading...", "success");
 
-  // ── Attempt 1: XMLHttpRequest in content script ────────────────────────────
-  const xhrResult = await fetchImageViaXHR(currentTabId, coverImageUrl);
+  // ── Attempt 1: fetch() in content script ───────────────────────────────────
+  const fetchResult = await fetchImageViaFetch(currentTabId, coverImageUrl);
 
-  if (xhrResult.dataUrl) {
+  if (fetchResult.dataUrl) {
     try {
-      const downloadId = await new Promise((resolve, reject) => {
+      await new Promise((resolve, reject) => {
         chrome.downloads.download(
           {
-            url: xhrResult.dataUrl,
+            url: fetchResult.dataUrl,
             filename: fileName,
             saveAs: false,
             conflictAction: "uniquify",
@@ -437,18 +426,18 @@ const downloadCoverImage = async () => {
           },
         );
       });
-      showNotification("Cover saved (via XHR)!", "success");
+      showNotification("Cover saved!", "success");
       return;
     } catch (err) {
-      console.error("XHR dataURL download failed:", err);
+      console.error("fetch dataURL download failed:", err);
     }
   }
 
-  if (xhrResult.error) {
+  if (fetchResult.error) {
     console.error(
-      "XHR fetch failed:",
-      xhrResult.error,
-      xhrResult.status || xhrResult.message,
+      "fetch failed:",
+      fetchResult.error,
+      fetchResult.status || fetchResult.message,
     );
   }
 
@@ -457,7 +446,7 @@ const downloadCoverImage = async () => {
 
   if (extractResult.dataUrl) {
     try {
-      const downloadId = await new Promise((resolve, reject) => {
+      await new Promise((resolve, reject) => {
         chrome.downloads.download(
           {
             url: extractResult.dataUrl,
@@ -489,13 +478,13 @@ const downloadCoverImage = async () => {
     console.warn("Canvas extraction failed:", extractResult.error);
   }
 
-  // ── Attempt 3: Background service worker with referer hack ───────────────
+  // ── Attempt 3: Background service worker with Referer header ──────────────
   const referer = `https://book.douban.com/subject/${elements.subjectId.value}/`;
   const bgResult = await fetchImageViaBackground(coverImageUrl, referer);
 
   if (bgResult.dataUrl) {
     try {
-      const downloadId = await new Promise((resolve, reject) => {
+      await new Promise((resolve, reject) => {
         chrome.downloads.download(
           {
             url: bgResult.dataUrl,
@@ -578,8 +567,16 @@ const loadBookData = async (tabId) => {
       showForm();
       updatePageStatus();
     } else {
-      isOnDoubanPage = true;
-      updatePageStatus();
+      if (lastValidBookData) {
+        // Re-populate form with cached data when fresh extraction fails
+        populateInputs(lastValidBookData);
+        isOnDoubanPage = true;
+        showForm();
+        updatePageStatus();
+      } else {
+        isOnDoubanPage = true;
+        updatePageStatus();
+      }
       if (error) {
         console.warn(
           "No content script response on Douban page after injection:",
@@ -595,8 +592,13 @@ const loadBookData = async (tabId) => {
 };
 
 const handleTabSwitch = async () => {
+  _initializing = true;
+
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (!tab) return;
+  if (!tab) {
+    _initializing = false;
+    return;
+  }
 
   const isDouban = tab.url?.startsWith("https://book.douban.com/subject/");
 
@@ -604,10 +606,10 @@ const handleTabSwitch = async () => {
     isOnDoubanPage = true;
     await loadBookData(tab.id);
   } else {
-    isOnDoubanPage = false;
     currentTabId = tab.id;
-    updatePageStatus();
   }
+
+  _initializing = false;
 };
 
 // ─── Select All on Focus ────────────────────────────────────────────────────
@@ -616,10 +618,7 @@ const initSelectAllOnFocus = () => {
   const inputs = elements.bookForm?.querySelectorAll("input");
   inputs?.forEach((input) => {
     input.addEventListener("focus", () => {
-      if (input.readOnly) {
-        navigator.clipboard.writeText(input.value).catch(() => {});
-      }
-
+      navigator.clipboard.writeText(input.value).catch(() => {});
       requestAnimationFrame(() => input.select());
     });
   });
@@ -643,18 +642,21 @@ chrome.runtime.onMessage.addListener((request) => {
     request.action === "pageChanged" &&
     request.url?.startsWith("https://book.douban.com/subject/")
   ) {
+    if (_initializing) return;
     isOnDoubanPage = true;
     loadBookData(request.tabId);
   }
   if (request.action === "tabActivated") {
+    if (_initializing) return;
     if (request.url?.startsWith("https://book.douban.com/subject/")) {
       isOnDoubanPage = true;
       loadBookData(request.tabId);
     } else {
-      isOnDoubanPage = false;
       currentTabId = request.tabId;
-      updatePageStatus();
     }
+  }
+  if (request.action === "saveCoverFromContextMenu") {
+    downloadCoverImage();
   }
 });
 
@@ -665,10 +667,17 @@ const initEventListeners = () => {
 
   elements.downloadCoverBtn?.addEventListener("click", downloadCoverImage);
 
-  elements.previewCoverBtn?.addEventListener("click", () => {
+  // Click preview image to save cover with proper filename
+  elements.coverPreview?.addEventListener("click", (e) => {
+    // Ignore if src is empty or not loaded from our proxy
+    if (!e.target.src || e.target.src === window.location.href) return;
+    downloadCoverImage();
+  });
+
+  elements.previewCoverBtn?.addEventListener("click", async () => {
     const url = elements.coverImageUrl.value.trim();
     if (url) {
-      updateCoverPreview(url);
+      await updateCoverPreview(url);
     } else {
       showNotification("Enter a cover URL first", "error");
     }
@@ -677,9 +686,9 @@ const initEventListeners = () => {
   let debounceTimer;
   elements.coverImageUrl?.addEventListener("input", (e) => {
     clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(() => {
+    debounceTimer = setTimeout(async () => {
       const url = e.target.value.trim();
-      if (url) updateCoverPreview(url);
+      if (url) await updateCoverPreview(url);
       else {
         elements.coverPreview.src = "";
         elements.coverPreview.classList.add("hidden");
