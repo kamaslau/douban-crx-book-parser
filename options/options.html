@@ -11,39 +11,86 @@
     <div class="container">
       <header class="header">
         <h1>Settings</h1>
-        <p class="subtitle">Configure remote endpoint for data export</p>
       </header>
 
       <main class="main">
         <form id="optionsForm" class="form">
-          <div class="field-group">
-            <label for="remoteUrl">Remote URL</label>
-            <input
-              type="url"
-              id="remoteUrl"
-              placeholder="https://api.example.com/webhook"
-              required
-            />
-            <span class="hint">POST endpoint to receive book data</span>
-          </div>
+          <fieldset class="section-fieldset">
+            <legend>Book API</legend>
 
-          <div class="field-group">
-            <label for="authToken">Authorization Token</label>
-            <input
-              type="password"
-              id="authToken"
-              placeholder="Enter your token"
-              required
-            />
-            <span class="hint"
-              >Token sent as Bearer token in Authorization header</span
-            >
-          </div>
+            <div class="field-group">
+              <label for="remoteUrl">Remote URL</label>
+              <input
+                type="url"
+                id="remoteUrl"
+                placeholder="https://api.example.com/webhook"
+                required
+              />
+              <span class="hint">POST endpoint to receive book data</span>
+            </div>
+
+            <div class="field-group">
+              <label for="authToken">Authorization Token</label>
+              <input
+                type="password"
+                id="authToken"
+                placeholder="Enter your token"
+                required
+              />
+              <span class="hint"
+                >Token sent as Bearer token in Authorization header</span
+              >
+            </div>
+          </fieldset>
+
+          <fieldset class="section-fieldset">
+            <legend>Cloudflare</legend>
+
+            <div class="field-group">
+              <label for="r2AccountId">R2 Account ID</label>
+              <input
+                id="r2AccountId"
+                placeholder="Your Cloudflare R2 account ID"
+              />
+            </div>
+
+            <div class="field-group">
+              <label for="r2EndpointUrl">S3 Endpoint URL</label>
+              <input
+                id="r2EndpointUrl"
+                class="readonly-url"
+                readonly
+                placeholder="https://<account-id>.r2.cloudflarestorage.com"
+              />
+              <span class="hint">Auto-generated from R2 Account ID</span>
+            </div>
+
+            <div class="field-group">
+              <label for="r2AccessKeyId">R2 Access Key ID</label>
+              <input id="r2AccessKeyId" placeholder="Your R2 access key ID" />
+            </div>
+
+            <div class="field-group">
+              <label for="r2SecretAccessKey">R2 Secret Access Key</label>
+              <input
+                type="password"
+                id="r2SecretAccessKey"
+                placeholder="Your R2 secret access key"
+              />
+            </div>
+
+            <div class="field-group">
+              <label for="awsBucketName">AWS Bucket Name</label>
+              <input
+                id="awsBucketName"
+                placeholder="Your S3-compatible bucket name"
+              />
+            </div>
+          </fieldset>
 
           <div class="actions">
-            <button type="submit" id="saveBtn" class="btn btn-primary">
-              Save Settings
-            </button>
+            <button id="saveBtn" class="btn btn-primary">Save Settings</button>
+
             <button type="button" id="testBtn" class="btn btn-secondary">
               Test Connection
             </button>

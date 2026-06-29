@@ -79,11 +79,33 @@ body {
   color: #999;
 }
 
+.field-group input.readonly-url {
+  background: #f0f0f0;
+  color: #666;
+  cursor: default;
+  font-family: "SF Mono", Monaco, "Cascadia Code", monospace;
+  font-size: 13px;
+}
+
 .hint {
   display: block;
   font-size: 12px;
   color: #888;
   margin-top: 4px;
+}
+
+.section-fieldset {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 24px;
+}
+
+.section-fieldset legend {
+  font-size: 14px;
+  font-weight: 600;
+  color: #555;
+  padding: 0 8px;
 }
 
 .actions {

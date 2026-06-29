@@ -3,11 +3,20 @@
 const STORAGE_KEYS = {
   remoteUrl: "remoteUrl",
   authToken: "authToken",
+  r2AccountId: "r2AccountId",
+  r2AccessKeyId: "r2AccessKeyId",
+  r2SecretAccessKey: "r2SecretAccessKey",
+  awsBucketName: "awsBucketName",
 };
 
 const elements = {
   remoteUrl: null,
   authToken: null,
+  r2AccountId: null,
+  r2AccessKeyId: null,
+  r2SecretAccessKey: null,
+  awsBucketName: null,
+  r2EndpointUrl: null,
   saveBtn: null,
   testBtn: null,
   optionsForm: null,
@@ -17,6 +26,11 @@ const elements = {
 const initElements = () => {
   elements.remoteUrl = document.getElementById("remoteUrl");
   elements.authToken = document.getElementById("authToken");
+  elements.r2AccountId = document.getElementById("r2AccountId");
+  elements.r2AccessKeyId = document.getElementById("r2AccessKeyId");
+  elements.r2SecretAccessKey = document.getElementById("r2SecretAccessKey");
+  elements.awsBucketName = document.getElementById("awsBucketName");
+  elements.r2EndpointUrl = document.getElementById("r2EndpointUrl");
   elements.saveBtn = document.getElementById("saveBtn");
   elements.testBtn = document.getElementById("testBtn");
   elements.optionsForm = document.getElementById("optionsForm");
@@ -36,14 +50,27 @@ const loadOptions = async () => {
     const result = await chrome.storage.sync.get([
       STORAGE_KEYS.remoteUrl,
       STORAGE_KEYS.authToken,
+      STORAGE_KEYS.r2AccountId,
+      STORAGE_KEYS.r2AccessKeyId,
+      STORAGE_KEYS.r2SecretAccessKey,
+      STORAGE_KEYS.awsBucketName,
     ]);
     const {
       [STORAGE_KEYS.remoteUrl]: remoteUrl = "",
       [STORAGE_KEYS.authToken]: authToken = "",
+      [STORAGE_KEYS.r2AccountId]: r2AccountId = "",
+      [STORAGE_KEYS.r2AccessKeyId]: r2AccessKeyId = "",
+      [STORAGE_KEYS.r2SecretAccessKey]: r2SecretAccessKey = "",
+      [STORAGE_KEYS.awsBucketName]: awsBucketName = "",
     } = result;
 
     elements.remoteUrl.value = remoteUrl;
     elements.authToken.value = authToken;
+    elements.r2AccountId.value = r2AccountId;
+    elements.r2AccessKeyId.value = r2AccessKeyId;
+    elements.r2SecretAccessKey.value = r2SecretAccessKey;
+    elements.awsBucketName.value = awsBucketName;
+    updateR2EndpointUrl();
   } catch (err) {
     console.error("Failed to load options:", err);
   }
@@ -65,10 +92,19 @@ const saveOptions = async (event) => {
     return;
   }
 
+  const r2AccountId = elements.r2AccountId.value.trim();
+  const r2AccessKeyId = elements.r2AccessKeyId.value.trim();
+  const r2SecretAccessKey = elements.r2SecretAccessKey.value.trim();
+  const awsBucketName = elements.awsBucketName.value.trim();
+
   try {
     await chrome.storage.sync.set({
       [STORAGE_KEYS.remoteUrl]: remoteUrl,
       [STORAGE_KEYS.authToken]: authToken,
+      [STORAGE_KEYS.r2AccountId]: r2AccountId,
+      [STORAGE_KEYS.r2AccessKeyId]: r2AccessKeyId,
+      [STORAGE_KEYS.r2SecretAccessKey]: r2SecretAccessKey,
+      [STORAGE_KEYS.awsBucketName]: awsBucketName,
     });
     showStatus("Settings saved successfully!", "success");
   } catch (err) {
@@ -124,6 +160,16 @@ const init = () => {
 
   elements.optionsForm.addEventListener("submit", saveOptions);
   elements.testBtn.addEventListener("click", testConnection);
+
+  // Auto-update S3 endpoint URL when R2 Account ID changes
+  elements.r2AccountId.addEventListener("input", updateR2EndpointUrl);
+};
+
+const updateR2EndpointUrl = () => {
+  const id = elements.r2AccountId.value.trim();
+  elements.r2EndpointUrl.value = id
+    ? `https://${id}.r2.cloudflarestorage.com`
+    : "";
 };
 
 document.addEventListener("DOMContentLoaded", init);
