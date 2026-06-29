@@ -537,9 +537,15 @@ const sha256 = async (data) => {
 };
 
 const hmacSha256 = async (key, data) => {
+  const keyBytes =
+    typeof key === "string"
+      ? new TextEncoder().encode(key)
+      : key instanceof ArrayBuffer
+        ? new Uint8Array(key)
+        : key;
   const cryptoKey = await crypto.subtle.importKey(
     "raw",
-    typeof key === "string" ? new TextEncoder().encode(key) : key,
+    keyBytes,
     { name: "HMAC", hash: "SHA-256" },
     false,
     ["sign"],
@@ -577,7 +583,7 @@ const s3PutObject = async (
   const dateStr = now.toISOString().slice(0, 10).replace(/-/g, "");
   const dateTimeStr = now.toISOString().slice(0, 19).replace(/[-:]/g, "") + "Z";
 
-  const url = `${endpoint.replace(/\/$/, "")}/${encodeURIComponent(objectKey)}`;
+  const url = `${endpoint.replace(/\/$/, "")}/${objectKey.split("/").map(encodeURIComponent).join("/")}`;
   const host = new URL(url).host;
 
   const buf = await blob.arrayBuffer();
@@ -589,7 +595,7 @@ const s3PutObject = async (
 
   const canonicalRequest = [
     "PUT",
-    `/${encodeURIComponent(objectKey)}`,
+    new URL(url).pathname,
     "",
     canonicalHeaders,
     signedHeaders,
@@ -644,6 +650,7 @@ const uploadCoverImage = async () => {
       "r2ApiTokenKeyId",
       "r2ApiTokenKeySecret",
       "awsBucketName",
+      "uploadDir",
     ]);
     config = result;
   } catch (err) {
@@ -675,16 +682,19 @@ const uploadCoverImage = async () => {
 
   try {
     const blob = await (await fetch(result.dataUrl)).blob();
+    const dir = config.uploadDir
+      ? `${config.uploadDir.replace(/^\/+|\/+$/g, "")}/`
+      : "";
     const success = await s3PutObject(
       endpoint,
-      fileName,
+      `${dir}${fileName}`,
       blob,
       config.r2ApiTokenKeyId,
       config.r2ApiTokenKeySecret,
     );
 
     if (success) {
-      showNotification(`Uploaded: ${fileName}`, "success");
+      showNotification(`Uploaded: ${dir}${fileName}`, "success");
     } else {
       showNotification("Upload failed: server rejected", "error");
     }

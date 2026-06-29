@@ -7,6 +7,7 @@ const STORAGE_KEYS = {
   r2ApiTokenKeyId: "r2ApiTokenKeyId",
   r2ApiTokenKeySecret: "r2ApiTokenKeySecret",
   awsBucketName: "awsBucketName",
+  uploadDir: "uploadDir",
 };
 
 const elements = {
@@ -16,6 +17,7 @@ const elements = {
   r2ApiTokenKeyId: null,
   r2ApiTokenKeySecret: null,
   awsBucketName: null,
+  uploadDir: null,
   r2EndpointUrl: null,
   saveBtn: null,
   testBtn: null,
@@ -30,6 +32,7 @@ const initElements = () => {
   elements.r2ApiTokenKeyId = document.getElementById("r2ApiTokenKeyId");
   elements.r2ApiTokenKeySecret = document.getElementById("r2ApiTokenKeySecret");
   elements.awsBucketName = document.getElementById("awsBucketName");
+  elements.uploadDir = document.getElementById("uploadDir");
   elements.r2EndpointUrl = document.getElementById("r2EndpointUrl");
   elements.saveBtn = document.getElementById("saveBtn");
   elements.testBtn = document.getElementById("testBtn");
@@ -54,6 +57,7 @@ const loadOptions = async () => {
       STORAGE_KEYS.r2ApiTokenKeyId,
       STORAGE_KEYS.r2ApiTokenKeySecret,
       STORAGE_KEYS.awsBucketName,
+      STORAGE_KEYS.uploadDir,
     ]);
     const {
       [STORAGE_KEYS.remoteUrl]: remoteUrl = "",
@@ -62,6 +66,7 @@ const loadOptions = async () => {
       [STORAGE_KEYS.r2ApiTokenKeyId]: r2ApiTokenKeyId = "",
       [STORAGE_KEYS.r2ApiTokenKeySecret]: r2ApiTokenKeySecret = "",
       [STORAGE_KEYS.awsBucketName]: awsBucketName = "",
+      [STORAGE_KEYS.uploadDir]: uploadDir = "",
     } = result;
 
     elements.remoteUrl.value = remoteUrl;
@@ -70,6 +75,7 @@ const loadOptions = async () => {
     elements.r2ApiTokenKeyId.value = r2ApiTokenKeyId;
     elements.r2ApiTokenKeySecret.value = r2ApiTokenKeySecret;
     elements.awsBucketName.value = awsBucketName;
+    elements.uploadDir.value = uploadDir;
     updateR2EndpointUrl();
   } catch (err) {
     console.error("Failed to load options:", err);
@@ -96,6 +102,7 @@ const saveOptions = async (event) => {
   const r2ApiTokenKeyId = elements.r2ApiTokenKeyId.value.trim();
   const r2ApiTokenKeySecret = elements.r2ApiTokenKeySecret.value.trim();
   const awsBucketName = elements.awsBucketName.value.trim();
+  const uploadDir = elements.uploadDir.value.trim();
 
   try {
     await chrome.storage.sync.set({
@@ -105,6 +112,7 @@ const saveOptions = async (event) => {
       [STORAGE_KEYS.r2ApiTokenKeyId]: r2ApiTokenKeyId,
       [STORAGE_KEYS.r2ApiTokenKeySecret]: r2ApiTokenKeySecret,
       [STORAGE_KEYS.awsBucketName]: awsBucketName,
+      [STORAGE_KEYS.uploadDir]: uploadDir,
     });
     showStatus("Settings saved successfully!", "success");
   } catch (err) {
