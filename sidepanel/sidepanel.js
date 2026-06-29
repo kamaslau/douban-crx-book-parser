@@ -15,6 +15,7 @@ const elements = {
   copyBtn: null,
   copyDropdown: null,
   downloadCoverBtn: null,
+  uploadCoverBtn: null,
   settingsBtn: null,
   sendBtn: null,
   bookForm: null,
@@ -48,6 +49,7 @@ const initElements = () => {
   elements.copyBtn = document.getElementById("copyBtn");
   elements.copyDropdown = document.getElementById("copyDropdown");
   elements.downloadCoverBtn = document.getElementById("downloadCoverBtn");
+  elements.uploadCoverBtn = document.getElementById("uploadCoverBtn");
   elements.settingsBtn = document.getElementById("settingsBtn");
   elements.sendBtn = document.getElementById("sendBtn");
   elements.bookForm = document.getElementById("bookForm");
@@ -518,6 +520,179 @@ const downloadCoverImage = async () => {
   showNotification("Download blocked by server. Copy URL manually.", "error");
 };
 
+// ─── Upload Cover ────────────────────────────────────────────────────────────
+
+// AWS Signature V4 helpers using Web Crypto API
+const sha256 = async (data) => {
+  const input =
+    typeof data === "string"
+      ? new TextEncoder().encode(data)
+      : data instanceof ArrayBuffer
+        ? new Uint8Array(data)
+        : data;
+  const hash = await crypto.subtle.digest("SHA-256", input);
+  return Array.from(new Uint8Array(hash))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+};
+
+const hmacSha256 = async (key, data) => {
+  const cryptoKey = await crypto.subtle.importKey(
+    "raw",
+    typeof key === "string" ? new TextEncoder().encode(key) : key,
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const sig = await crypto.subtle.sign(
+    "HMAC",
+    cryptoKey,
+    new TextEncoder().encode(data),
+  );
+  return new Uint8Array(sig);
+};
+
+const getSignatureKey = async (key, dateStr, region, service) => {
+  const kDate = await hmacSha256("AWS4" + key, dateStr);
+  const kRegion = await hmacSha256(kDate, region);
+  const kService = await hmacSha256(kRegion, service);
+  return await hmacSha256(kService, "aws4_request");
+};
+
+const toHex = (buf) =>
+  Array.from(new Uint8Array(buf))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+
+const s3PutObject = async (
+  endpoint,
+  objectKey,
+  blob,
+  accessKeyId,
+  secretAccessKey,
+) => {
+  const region = "auto";
+  const service = "s3";
+  const now = new Date();
+  const dateStr = now.toISOString().slice(0, 10).replace(/-/g, "");
+  const dateTimeStr = now.toISOString().slice(0, 19).replace(/[-:]/g, "") + "Z";
+
+  const url = `${endpoint.replace(/\/$/, "")}/${encodeURIComponent(objectKey)}`;
+  const host = new URL(url).host;
+
+  const buf = await blob.arrayBuffer();
+  const bytes = new Uint8Array(buf);
+  const contentHash = await sha256(bytes);
+
+  const canonicalHeaders = `host:${host}\nx-amz-content-sha256:${contentHash}\nx-amz-date:${dateTimeStr}\n`;
+  const signedHeaders = "host;x-amz-content-sha256;x-amz-date";
+
+  const canonicalRequest = [
+    "PUT",
+    `/${encodeURIComponent(objectKey)}`,
+    "",
+    canonicalHeaders,
+    signedHeaders,
+    contentHash,
+  ].join("\n");
+
+  const credentialScope = `${dateStr}/${region}/${service}/aws4_request`;
+  const stringToSign = [
+    "AWS4-HMAC-SHA256",
+    dateTimeStr,
+    credentialScope,
+    await sha256(canonicalRequest),
+  ].join("\n");
+
+  const signingKey = await getSignatureKey(
+    secretAccessKey,
+    dateStr,
+    region,
+    service,
+  );
+  const signature = toHex(await hmacSha256(signingKey, stringToSign));
+
+  const authorization = `AWS4-HMAC-SHA256 Credential=${accessKeyId}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`;
+
+  const response = await fetch(url, {
+    method: "PUT",
+    headers: {
+      Authorization: authorization,
+      "x-amz-content-sha256": contentHash,
+      "x-amz-date": dateTimeStr,
+      "Content-Type": blob.type || "image/jpeg",
+    },
+    // Send the same ArrayBuffer that was hashed to guarantee byte-identity
+    body: buf,
+  });
+
+  return response.ok;
+};
+
+const uploadCoverImage = async () => {
+  const coverImageUrl = elements.coverImageUrl.value;
+  if (!coverImageUrl) {
+    showNotification("No cover image URL", "error");
+    return;
+  }
+
+  // Read R2 settings from storage
+  let config;
+  try {
+    const result = await chrome.storage.sync.get([
+      "r2AccountId",
+      "r2ApiTokenKeyId",
+      "r2ApiTokenKeySecret",
+      "awsBucketName",
+    ]);
+    config = result;
+  } catch (err) {
+    showNotification("Failed to load R2 settings", "error");
+    return;
+  }
+
+  if (
+    !config.r2AccountId ||
+    !config.r2ApiTokenKeyId ||
+    !config.r2ApiTokenKeySecret ||
+    !config.awsBucketName
+  ) {
+    showNotification("Configure R2 in settings first", "error");
+    return;
+  }
+
+  const fileName = `${elements.isbn.value || elements.subjectId.value || "cover"}.jpg`;
+  const endpoint = `https://${config.awsBucketName}.${config.r2AccountId}.r2.cloudflarestorage.com`;
+
+  showNotification("Uploading...", "success");
+
+  // Get image data via fetch injected into page (correct Referer)
+  const result = await fetchImageViaFetch(currentTabId, coverImageUrl);
+  if (!result || !result.dataUrl) {
+    showNotification("Failed to fetch image", "error");
+    return;
+  }
+
+  try {
+    const blob = await (await fetch(result.dataUrl)).blob();
+    const success = await s3PutObject(
+      endpoint,
+      fileName,
+      blob,
+      config.r2ApiTokenKeyId,
+      config.r2ApiTokenKeySecret,
+    );
+
+    if (success) {
+      showNotification(`Uploaded: ${fileName}`, "success");
+    } else {
+      showNotification("Upload failed: server rejected", "error");
+    }
+  } catch (err) {
+    showNotification(`Upload failed: ${err.message}`, "error");
+  }
+};
+
 // ─── UI State Management ────────────────────────────────────────────────────
 
 const updatePageStatus = () => {
@@ -666,6 +841,7 @@ const initEventListeners = () => {
   initPriceSanitization();
 
   elements.downloadCoverBtn?.addEventListener("click", downloadCoverImage);
+  elements.uploadCoverBtn?.addEventListener("click", uploadCoverImage);
 
   // Click preview image to save cover with proper filename
   elements.coverPreview?.addEventListener("click", (e) => {
