@@ -4,8 +4,8 @@ const STORAGE_KEYS = {
   remoteUrl: "remoteUrl",
   authToken: "authToken",
   r2AccountId: "r2AccountId",
-  r2AccessKeyId: "r2AccessKeyId",
-  r2SecretAccessKey: "r2SecretAccessKey",
+  r2ApiTokenKeyId: "r2ApiTokenKeyId",
+  r2ApiTokenKeySecret: "r2ApiTokenKeySecret",
   awsBucketName: "awsBucketName",
 };
 
@@ -13,8 +13,8 @@ const elements = {
   remoteUrl: null,
   authToken: null,
   r2AccountId: null,
-  r2AccessKeyId: null,
-  r2SecretAccessKey: null,
+  r2ApiTokenKeyId: null,
+  r2ApiTokenKeySecret: null,
   awsBucketName: null,
   r2EndpointUrl: null,
   saveBtn: null,
@@ -27,8 +27,8 @@ const initElements = () => {
   elements.remoteUrl = document.getElementById("remoteUrl");
   elements.authToken = document.getElementById("authToken");
   elements.r2AccountId = document.getElementById("r2AccountId");
-  elements.r2AccessKeyId = document.getElementById("r2AccessKeyId");
-  elements.r2SecretAccessKey = document.getElementById("r2SecretAccessKey");
+  elements.r2ApiTokenKeyId = document.getElementById("r2ApiTokenKeyId");
+  elements.r2ApiTokenKeySecret = document.getElementById("r2ApiTokenKeySecret");
   elements.awsBucketName = document.getElementById("awsBucketName");
   elements.r2EndpointUrl = document.getElementById("r2EndpointUrl");
   elements.saveBtn = document.getElementById("saveBtn");
@@ -51,24 +51,24 @@ const loadOptions = async () => {
       STORAGE_KEYS.remoteUrl,
       STORAGE_KEYS.authToken,
       STORAGE_KEYS.r2AccountId,
-      STORAGE_KEYS.r2AccessKeyId,
-      STORAGE_KEYS.r2SecretAccessKey,
+      STORAGE_KEYS.r2ApiTokenKeyId,
+      STORAGE_KEYS.r2ApiTokenKeySecret,
       STORAGE_KEYS.awsBucketName,
     ]);
     const {
       [STORAGE_KEYS.remoteUrl]: remoteUrl = "",
       [STORAGE_KEYS.authToken]: authToken = "",
       [STORAGE_KEYS.r2AccountId]: r2AccountId = "",
-      [STORAGE_KEYS.r2AccessKeyId]: r2AccessKeyId = "",
-      [STORAGE_KEYS.r2SecretAccessKey]: r2SecretAccessKey = "",
+      [STORAGE_KEYS.r2ApiTokenKeyId]: r2ApiTokenKeyId = "",
+      [STORAGE_KEYS.r2ApiTokenKeySecret]: r2ApiTokenKeySecret = "",
       [STORAGE_KEYS.awsBucketName]: awsBucketName = "",
     } = result;
 
     elements.remoteUrl.value = remoteUrl;
     elements.authToken.value = authToken;
     elements.r2AccountId.value = r2AccountId;
-    elements.r2AccessKeyId.value = r2AccessKeyId;
-    elements.r2SecretAccessKey.value = r2SecretAccessKey;
+    elements.r2ApiTokenKeyId.value = r2ApiTokenKeyId;
+    elements.r2ApiTokenKeySecret.value = r2ApiTokenKeySecret;
     elements.awsBucketName.value = awsBucketName;
     updateR2EndpointUrl();
   } catch (err) {
@@ -93,8 +93,8 @@ const saveOptions = async (event) => {
   }
 
   const r2AccountId = elements.r2AccountId.value.trim();
-  const r2AccessKeyId = elements.r2AccessKeyId.value.trim();
-  const r2SecretAccessKey = elements.r2SecretAccessKey.value.trim();
+  const r2ApiTokenKeyId = elements.r2ApiTokenKeyId.value.trim();
+  const r2ApiTokenKeySecret = elements.r2ApiTokenKeySecret.value.trim();
   const awsBucketName = elements.awsBucketName.value.trim();
 
   try {
@@ -102,8 +102,8 @@ const saveOptions = async (event) => {
       [STORAGE_KEYS.remoteUrl]: remoteUrl,
       [STORAGE_KEYS.authToken]: authToken,
       [STORAGE_KEYS.r2AccountId]: r2AccountId,
-      [STORAGE_KEYS.r2AccessKeyId]: r2AccessKeyId,
-      [STORAGE_KEYS.r2SecretAccessKey]: r2SecretAccessKey,
+      [STORAGE_KEYS.r2ApiTokenKeyId]: r2ApiTokenKeyId,
+      [STORAGE_KEYS.r2ApiTokenKeySecret]: r2ApiTokenKeySecret,
       [STORAGE_KEYS.awsBucketName]: awsBucketName,
     });
     showStatus("Settings saved successfully!", "success");
