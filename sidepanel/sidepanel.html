@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Douban Book Extractor</title>
+    <link rel="stylesheet" href="../global.css" />
     <link rel="stylesheet" href="sidepanel.css" />
   </head>
 
@@ -28,7 +29,7 @@
         <form id="bookForm" class="form hidden">
           <!-- Row 1: Subject ID (label + input same row) -->
           <div class="field-group inline">
-            <label for="subjectId">豆瓣 ID</label>
+            <label>豆瓣 ID</label>
             <input
               id="subjectId"
               placeholder="ID"
@@ -48,8 +49,8 @@
           <!-- Row 3: ISBN + Published (same row) -->
           <div class="field-row dual">
             <div class="field-group">
-              <label for="isbn">ISBN</label>
-              <input id="isbn" placeholder="ISBN" />
+              <label>ISBN</label>
+              <input id="isbn" placeholder="ISBN" readonly />
             </div>
             <div class="field-group">
               <label for="publishedDate">Published</label>
@@ -83,7 +84,7 @@
 
           <!-- Row 6: Cover URL -->
           <div class="field-group">
-            <label for="coverImageUrl">Cover URL</label>
+            <label>Cover URL</label>
 
             <div class="input-with-action">
               <input readonly id="coverImageUrl" placeholder="Image URL" />
