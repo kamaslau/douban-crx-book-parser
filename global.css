@@ -1,0 +1,73 @@
+/* Global styles — shared across all pages */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --font-sans: ui-sans-serif, "Noto Sans SC", "Noto Sans";
+  --font-mono: "JetBrains Mono", ui-monospace, "Noto Sans Mono", monospace;
+}
+
+body {
+  font-family: var(--font-mono);
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+/* ─── Shared form patterns ─────────────────────────────────────────────── */
+
+input,
+textarea,
+option {
+  font-family: var(--font-sans);
+}
+
+input[readonly] {
+  font-family: var(--font-mono);
+}
+
+input:focus,
+textarea:focus {
+  outline: none;
+}
+
+.field-group input,
+.field-group textarea {
+  width: 100%;
+  border-radius: 0.375rem;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+}
+
+.field-group label {
+  display: block;
+  font-weight: 500;
+}
+
+.container {
+  margin: 0 auto;
+}
+
+.header h1 {
+  font-weight: 600;
+}
+
+.btn {
+  border: none;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+/* Text color sequence: darkest → medium → lightest */
+label,
+datalist {
+  color: #666;
+}
+
+legend {
+  color: #999;
+}
