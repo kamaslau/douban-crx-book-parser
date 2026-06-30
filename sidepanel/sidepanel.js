@@ -631,12 +631,13 @@ const uploadCoverImage = async () => {
 // ─── UI State Management ────────────────────────────────────────────────────
 
 const updatePageStatus = () => {
-  if (isOnDoubanPage) {
+  const showLoaded = isOnDoubanPage && currentView === "parser";
+  if (showLoaded) {
     elements.pageStatus.textContent = "Book data loaded";
     elements.pageStatus.classList.add("active");
   } else {
     elements.pageStatus.textContent = lastValidBookData
-      ? "Data retained (not on Douban)"
+      ? "Data retained"
       : "Not on Douban book page";
     elements.pageStatus.classList.remove("active");
   }
@@ -754,6 +755,7 @@ const switchView = (name) => {
   elements.parserView.classList.toggle("hidden", name !== "parser");
   elements.historyView.classList.toggle("hidden", name !== "history");
 
+  updatePageStatus();
   if (name === "history") renderHistory();
 };
 
