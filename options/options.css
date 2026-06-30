@@ -56,7 +56,7 @@ body {
 }
 
 .field-group input.readonly-url {
-  background: #eef2f7;
+  background: #222c3d;
   color: var(--color-muted);
   cursor: default;
   font-size: 0.8125rem;

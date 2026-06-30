@@ -9,16 +9,16 @@
   --font-sans: ui-sans-serif, "Noto Sans SC", "Noto Sans";
   --font-mono: "JetBrains Mono", ui-monospace, "Noto Sans Mono", monospace;
 
-  --color-bg: #f0f5fa;
-  --color-surface: #ffffff;
-  --color-text: #1a2a3a;
-  --color-heading: #0a2e5c;
-  --color-muted: #4a5a6a;
-  --color-border: #dce3ed;
-  --color-accent: #0a2e5c;
-  --color-focus: #0a2e5c;
+  --color-bg: #0f1419;
+  --color-surface: #1a2332;
+  --color-text: #e4e8ed;
+  --color-heading: #ffffff;
+  --color-muted: #8892a4;
+  --color-border: #2a3442;
+  --color-accent: #5b9cf5;
+  --color-focus: #5b9cf5;
   --color-success: #4caf50;
-  --color-error: #e53935;
+  --color-error: #ef5350;
 }
 
 body {
@@ -74,7 +74,7 @@ select:focus {
 .field-group textarea:focus,
 .field-group select:focus {
   border-color: var(--color-focus);
-  box-shadow: 0 0 0 0.125rem rgba(10, 46, 92, 0.15);
+  box-shadow: 0 0 0 0.125rem rgba(91, 156, 245, 0.25);
 }
 
 .field-group label {
@@ -132,7 +132,7 @@ hr {
 }
 
 .btn-secondary:hover:not(:disabled) {
-  background: #e8ecf2;
+  background: #252f3f;
 }
 
 /* Text color sequence */

@@ -1,5 +1,5 @@
 :root {
-  --bg-hover: #e8ecf2;
+  --bg-hover: #252f3f;
 }
 
 body {
@@ -54,7 +54,6 @@ body {
   color: var(--color-accent);
   border-bottom-color: transparent;
   background: var(--color-bg);
-  border-radius: 0 0 0.375rem 0.375rem;
 }
 
 .tab-content.hidden {
@@ -443,6 +442,10 @@ figure figcaption {
 
 .notification.error {
   background: var(--color-error);
+}
+
+.notification.info {
+  background: #1a3a5c;
 }
 
 /* Scrollbar */

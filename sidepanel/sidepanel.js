@@ -600,7 +600,7 @@ const uploadCoverImage = async () => {
       const newSize = blob.size;
       const msg = `File exists (${formatFileSize(existingSize)}) vs new (${formatFileSize(newSize)}). Overwrite?`;
       if (!confirm(msg)) {
-        showNotification("File already exists", "success");
+        showNotification("File already exists", "info");
         elements.uploadedUrl.value = objectKey;
         elements.uploadedUrl.classList.remove("hidden");
         return;
