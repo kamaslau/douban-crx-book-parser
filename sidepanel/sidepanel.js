@@ -633,12 +633,10 @@ const uploadCoverImage = async () => {
 const updateParserStatus = () => {
   const showLoaded = isOnDoubanPage && currentView === "parser";
   if (showLoaded) {
-    elements.parserStatus.textContent = "Book data loaded";
+    elements.parserStatus.textContent = "Ready";
     elements.parserStatus.classList.add("active");
   } else {
-    elements.parserStatus.textContent = lastValidBookData
-      ? "Data retained"
-      : "Not on Douban book page";
+    elements.parserStatus.textContent = lastValidBookData ? "Cached" : "Idle";
     elements.parserStatus.classList.remove("active");
   }
 };
