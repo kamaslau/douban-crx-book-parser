@@ -584,32 +584,37 @@ const toHex = (buf) =>
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
 
-const s3PutObject = async (
+const EMPTY_HASH =
+  "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
+
+const formatFileSize = (bytes) => {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+};
+
+const buildS3Auth = async ({
+  method,
   endpoint,
   objectKey,
-  blob,
+  contentHash,
+  dateTimeStr,
+  dateStr,
+  region,
+  service,
   accessKeyId,
   secretAccessKey,
-) => {
-  const region = "auto";
-  const service = "s3";
-  const now = new Date();
-  const dateStr = now.toISOString().slice(0, 10).replace(/-/g, "");
-  const dateTimeStr = now.toISOString().slice(0, 19).replace(/[-:]/g, "") + "Z";
-
+}) => {
   const url = `${endpoint.replace(/\/$/, "")}/${objectKey.split("/").map(encodeURIComponent).join("/")}`;
   const host = new URL(url).host;
-
-  const buf = await blob.arrayBuffer();
-  const bytes = new Uint8Array(buf);
-  const contentHash = await sha256(bytes);
+  const path = new URL(url).pathname;
 
   const canonicalHeaders = `host:${host}\nx-amz-content-sha256:${contentHash}\nx-amz-date:${dateTimeStr}\n`;
   const signedHeaders = "host;x-amz-content-sha256;x-amz-date";
 
   const canonicalRequest = [
-    "PUT",
-    new URL(url).pathname,
+    method,
+    path,
     "",
     canonicalHeaders,
     signedHeaders,
@@ -632,21 +637,96 @@ const s3PutObject = async (
   );
   const signature = toHex(await hmacSha256(signingKey, stringToSign));
 
-  const authorization = `AWS4-HMAC-SHA256 Credential=${accessKeyId}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`;
+  return {
+    url,
+    host,
+    path,
+    headers: {
+      Authorization: `AWS4-HMAC-SHA256 Credential=${accessKeyId}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`,
+      "x-amz-content-sha256": contentHash,
+      "x-amz-date": dateTimeStr,
+    },
+  };
+};
+
+const s3PutObject = async (
+  endpoint,
+  objectKey,
+  blob,
+  accessKeyId,
+  secretAccessKey,
+) => {
+  const region = "auto";
+  const service = "s3";
+  const now = new Date();
+  const dateStr = now.toISOString().slice(0, 10).replace(/-/g, "");
+  const dateTimeStr = now.toISOString().slice(0, 19).replace(/[-:]/g, "") + "Z";
+
+  const buf = await blob.arrayBuffer();
+  const contentHash = await sha256(new Uint8Array(buf));
+
+  const { url, headers } = await buildS3Auth({
+    method: "PUT",
+    endpoint,
+    objectKey,
+    contentHash,
+    dateTimeStr,
+    dateStr,
+    region,
+    service,
+    accessKeyId,
+    secretAccessKey,
+  });
 
   const response = await fetch(url, {
     method: "PUT",
     headers: {
-      Authorization: authorization,
-      "x-amz-content-sha256": contentHash,
-      "x-amz-date": dateTimeStr,
+      ...headers,
       "Content-Type": blob.type || "image/jpeg",
     },
-    // Send the same ArrayBuffer that was hashed to guarantee byte-identity
     body: buf,
   });
 
   return response.ok;
+};
+
+const s3HeadObject = async (
+  endpoint,
+  objectKey,
+  accessKeyId,
+  secretAccessKey,
+) => {
+  const region = "auto";
+  const service = "s3";
+  const now = new Date();
+  const dateStr = now.toISOString().slice(0, 10).replace(/-/g, "");
+  const dateTimeStr = now.toISOString().slice(0, 19).replace(/[-:]/g, "") + "Z";
+
+  const { url, headers } = await buildS3Auth({
+    method: "HEAD",
+    endpoint,
+    objectKey,
+    contentHash: EMPTY_HASH,
+    dateTimeStr,
+    dateStr,
+    region,
+    service,
+    accessKeyId,
+    secretAccessKey,
+  });
+
+  try {
+    const response = await fetch(url, { method: "HEAD", headers });
+    return {
+      exists: response.status === 200,
+      size:
+        response.status === 200
+          ? parseInt(response.headers.get("content-length") || "0", 10)
+          : null,
+    };
+  } catch {
+    return { exists: false, size: null };
+  }
 };
 
 const uploadCoverImage = async () => {
@@ -698,9 +778,30 @@ const uploadCoverImage = async () => {
     const dir = config.uploadDir
       ? `${config.uploadDir.replace(/^\/+|\/+$/g, "")}/`
       : "";
+    const objectKey = `${dir}${fileName}`;
+
+    // Check if file already exists
+    const { exists, size: existingSize } = await s3HeadObject(
+      endpoint,
+      objectKey,
+      config.r2ApiTokenKeyId,
+      config.r2ApiTokenKeySecret,
+    );
+
+    if (exists) {
+      const newSize = blob.size;
+      const msg = `File exists (${formatFileSize(existingSize)}) vs new (${formatFileSize(newSize)}). Overwrite?`;
+      if (!confirm(msg)) {
+        showNotification("File already exists", "success");
+        elements.uploadedUrl.value = objectKey;
+        elements.uploadedUrl.classList.remove("hidden");
+        return;
+      }
+    }
+
     const success = await s3PutObject(
       endpoint,
-      `${dir}${fileName}`,
+      objectKey,
       blob,
       config.r2ApiTokenKeyId,
       config.r2ApiTokenKeySecret,
