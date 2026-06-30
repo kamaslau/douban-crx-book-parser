@@ -1,20 +1,8 @@
 :root {
-  --bg-primary: #1a1a2e;
-  --bg-secondary: #16213e;
-  --bg-input: #0f3460;
-  --text-primary: #e94560;
-  --text-secondary: #eee;
-  --text-muted: #aaa;
-  --border: #0f3460;
-  --success: #4caf50;
-  --error: #f44336;
-  --accent: #e94560;
-  --focus-ring: #5cadff;
+  --bg-hover: #e8ecf2;
 }
 
 body {
-  background: var(--bg-primary);
-  color: var(--text-secondary);
   width: 100%;
   height: 100vh;
   font-size: 0.875rem;
@@ -32,8 +20,8 @@ body {
 /* Header */
 .header {
   padding: 0.75rem 1.25rem;
-  border-bottom: 0.0625rem solid var(--border);
-  background: var(--bg-secondary);
+  border-bottom: 0.0625rem solid var(--color-border);
+  background: var(--color-surface);
   flex-shrink: 0;
 }
 
@@ -45,7 +33,6 @@ body {
 
 .header h1 {
   font-size: 1rem;
-  color: var(--text-primary);
   margin: 0;
 }
 
@@ -55,7 +42,6 @@ body {
   gap: 0;
   margin: 0.75rem -1.25rem -0.75rem;
   padding: 0 1.25rem;
-  border-top: 0.0625rem solid var(--border);
 }
 
 .tab {
@@ -64,7 +50,7 @@ body {
   background: none;
   border: none;
   border-bottom: 0.125rem solid transparent;
-  color: var(--text-muted);
+  color: var(--color-muted);
   font-size: 0.8125rem;
   font-weight: 500;
   cursor: pointer;
@@ -72,12 +58,12 @@ body {
 }
 
 .tab:hover {
-  color: var(--text-secondary);
+  color: var(--color-text);
 }
 
 .tab.active {
-  color: var(--accent);
-  border-bottom-color: var(--accent);
+  color: var(--color-accent);
+  border-bottom-color: var(--color-accent);
 }
 
 .tab-content.hidden {
@@ -86,7 +72,7 @@ body {
 
 .status {
   font-size: 0.6875rem;
-  color: var(--text-muted);
+  color: var(--color-muted);
   display: flex;
   align-items: center;
   gap: 0.375rem;
@@ -97,22 +83,11 @@ body {
   width: 0.375rem;
   height: 0.375rem;
   border-radius: 50%;
-  background: var(--text-muted);
+  background: var(--color-muted);
 }
 
 .status.active::before {
-  background: var(--success);
-  animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
+  background: var(--color-success);
 }
 
 /* Main Content - scrollable */
@@ -127,17 +102,17 @@ body {
 .unsupported {
   text-align: center;
   padding: 2.5rem 1.25rem;
-  color: var(--text-muted);
+  color: var(--color-muted);
 }
 
 .unsupported .icon {
   font-size: 2rem;
   font-weight: 700;
-  color: var(--accent);
+  color: var(--color-accent);
   width: 2.75rem;
   height: 2.75rem;
   line-height: 2.5rem;
-  border: 0.125rem solid var(--accent);
+  border: 0.125rem solid var(--color-accent);
   border-radius: 50%;
   margin: 0 auto 1rem;
 }
@@ -148,7 +123,7 @@ body {
 }
 
 .link {
-  color: var(--accent);
+  color: var(--color-accent);
   text-decoration: none;
   font-size: 0.8125rem;
 }
@@ -167,14 +142,6 @@ body {
   margin-bottom: 0.75rem;
 }
 
-.field-group label {
-  font-size: 0.6875rem;
-  color: var(--text-muted);
-  margin-bottom: 0.25rem;
-  text-transform: uppercase;
-  letter-spacing: 0.03125rem;
-}
-
 /* Inline field: label + input on same row */
 .field-group.inline {
   display: flex;
@@ -186,7 +153,6 @@ body {
 .field-group.inline label {
   margin-bottom: 0;
   flex-shrink: 0;
-  font-size: 0.6875rem;
 }
 
 .field-group.inline input {
@@ -194,21 +160,8 @@ body {
   margin: 0;
 }
 
-.field-group input {
-  padding: 0.5rem 0.625rem;
-  background: var(--bg-input);
-  border: 0.0625rem solid var(--border);
-  color: var(--text-secondary);
-  font-size: 0.8125rem;
-}
-
 .field-group input:hover {
-  border-color: var(--focus-ring);
-}
-
-.field-group input:focus {
-  border-color: var(--focus-ring);
-  box-shadow: 0 0 0 0.125rem rgba(92, 173, 255, 0.2);
+  border-color: var(--color-accent);
 }
 
 .field-group input[readonly] {
@@ -217,7 +170,7 @@ body {
 }
 
 .field-group input[readonly]:hover {
-  border-color: var(--text-muted);
+  border-color: var(--color-muted);
 }
 
 /* Row layouts */
@@ -256,18 +209,18 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--bg-input);
-  border: 0.0625rem solid var(--border);
+  background: var(--color-surface);
+  border: 0.0625rem solid var(--color-border);
   border-radius: 0.375rem;
-  color: var(--text-muted);
+  color: var(--color-muted);
   cursor: pointer;
   transition: all 0.2s;
   flex-shrink: 0;
 }
 
 .btn-icon:hover {
-  background: var(--border);
-  color: var(--text-secondary);
+  background: var(--bg-hover);
+  color: var(--color-text);
 }
 
 .preview-image {
@@ -276,8 +229,8 @@ body {
   max-height: 8.75rem;
   object-fit: cover;
   border-radius: 0.25rem;
-  border: 0.0625rem solid var(--border);
-  background: var(--bg-input);
+  border: 0.0625rem solid var(--color-border);
+  background: var(--color-surface);
 }
 
 .preview-image.hidden {
@@ -296,10 +249,10 @@ figure figcaption {
 .uploaded-url {
   width: 100%;
   padding: 0.375rem 0.5rem;
-  background: var(--bg-input);
-  border: 0.0625rem solid var(--border);
+  background: var(--color-surface);
+  border: 0.0625rem solid var(--color-border);
   border-radius: 0.25rem;
-  color: var(--text-muted);
+  color: var(--color-muted);
   font-size: 0.6875rem;
   text-align: center;
 }
@@ -322,7 +275,7 @@ figure figcaption {
 .history-empty {
   text-align: center;
   padding: 2.5rem 1.25rem;
-  color: var(--text-muted);
+  color: var(--color-muted);
 }
 
 .history-empty.hidden {
@@ -331,13 +284,13 @@ figure figcaption {
 
 .history-item {
   padding: 0.75rem 1.25rem;
-  border-bottom: 0.0625rem solid var(--border);
+  border-bottom: 0.0625rem solid var(--color-border);
   cursor: pointer;
   transition: background 0.15s;
 }
 
 .history-item:hover {
-  background: var(--bg-input);
+  background: var(--bg-hover);
 }
 
 .history-item:last-child {
@@ -347,7 +300,7 @@ figure figcaption {
 .history-item-title {
   font-size: 0.8125rem;
   font-weight: 500;
-  color: var(--text-secondary);
+  color: var(--color-text);
   margin-bottom: 0.25rem;
 }
 
@@ -355,14 +308,14 @@ figure figcaption {
   display: flex;
   gap: 0.75rem;
   font-size: 0.6875rem;
-  color: var(--text-muted);
+  color: var(--color-muted);
 }
 
 /* Sticky Bottom Actions */
 .actions-bar {
   padding: 0.75rem 1.25rem 1rem;
-  border-top: 0.0625rem solid var(--border);
-  background: var(--bg-secondary);
+  border-top: 0.0625rem solid var(--color-border);
+  background: var(--color-surface);
   display: flex;
   align-items: stretch;
   gap: 0.625rem;
@@ -378,26 +331,6 @@ figure figcaption {
   align-items: center;
   justify-content: center;
   gap: 0.375rem;
-  transition: all 0.2s;
-}
-
-.btn-primary {
-  background: var(--accent);
-  color: white;
-}
-
-.btn-primary:hover {
-  background: #d63d56;
-}
-
-.btn-secondary {
-  background: var(--bg-input);
-  color: var(--text-secondary);
-  border: 0.0625rem solid var(--border);
-}
-
-.btn-secondary:hover {
-  background: var(--border);
 }
 
 /* Dropdown - pops UP from bottom, full width */
@@ -412,12 +345,12 @@ figure figcaption {
   left: 0;
   right: 0;
   min-width: max-content;
-  background: var(--bg-secondary);
-  border: 0.0625rem solid var(--border);
+  background: var(--color-surface);
+  border: 0.0625rem solid var(--color-border);
   border-radius: 0.5rem;
   padding: 0.375rem;
   z-index: 50;
-  box-shadow: 0 -0.5rem 1.5rem rgba(0, 0, 0, 0.4);
+  box-shadow: 0 -0.5rem 1.5rem rgba(0, 0, 0, 0.1);
   animation: dropdownUp 0.15s ease;
 }
 
@@ -447,14 +380,14 @@ figure figcaption {
 }
 
 .dropdown-item:hover {
-  background: var(--bg-input);
+  background: var(--bg-hover);
 }
 
 .item-icon {
   font-size: 0.8125rem;
   font-weight: 600;
   font-family: "Courier New", monospace;
-  color: var(--accent);
+  color: var(--color-accent);
   width: 1.75rem;
   text-align: center;
   flex-shrink: 0;
@@ -469,12 +402,12 @@ figure figcaption {
 .item-label {
   font-size: 0.8125rem;
   font-weight: 500;
-  color: var(--text-secondary);
+  color: var(--color-text);
 }
 
 .item-desc {
   font-size: 0.6875rem;
-  color: var(--text-muted);
+  color: var(--color-muted);
 }
 
 .caret {
@@ -507,11 +440,11 @@ figure figcaption {
 }
 
 .notification.success {
-  background: var(--success);
+  background: var(--color-success);
 }
 
 .notification.error {
-  background: var(--error);
+  background: var(--color-error);
 }
 
 /* Scrollbar */
@@ -524,10 +457,10 @@ figure figcaption {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--bg-input);
+  background: var(--color-border);
   border-radius: 0.125rem;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--border);
+  background: var(--color-muted);
 }
