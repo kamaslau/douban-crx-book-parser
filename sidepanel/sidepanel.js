@@ -123,6 +123,10 @@ const populateInputs = async (data) => {
   elements.form.value = data.form || "";
   elements.tagPrice.value = data.tagPrice || "";
 
+  // Reset upload path — only shown after a fresh upload
+  elements.uploadedUrl.value = "";
+  elements.uploadedUrl.classList.add("hidden");
+
   if (data.coverImageUrl) {
     await updateCoverPreview(data.coverImageUrl);
   } else {
@@ -842,10 +846,10 @@ const onHistoryItemClick = async (entry) => {
     });
     // loadBookData will fire via pageChanged; switch tab when data arrives
   } else {
-    // Not on Douban — populate directly from history
-    populateInputs(entry);
-    showForm();
-    switchView("parser");
+    // Not on Douban — open a new tab for the book page
+    await chrome.tabs.create({
+      url: `https://book.douban.com/subject/${entry.subjectId}/`,
+    });
   }
 };
 
