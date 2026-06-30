@@ -49,6 +49,41 @@ body {
   margin: 0;
 }
 
+/* Tab bar */
+.tab-bar {
+  display: flex;
+  gap: 0;
+  margin: 0.75rem -1.25rem -0.75rem;
+  padding: 0 1.25rem;
+  border-top: 0.0625rem solid var(--border);
+}
+
+.tab {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  background: none;
+  border: none;
+  border-bottom: 0.125rem solid transparent;
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.tab:hover {
+  color: var(--text-secondary);
+}
+
+.tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+.tab-content.hidden {
+  display: none;
+}
+
 .status {
   font-size: 0.6875rem;
   color: var(--text-muted);
@@ -271,6 +306,56 @@ figure figcaption {
 
 .uploaded-url.hidden {
   display: none;
+}
+
+.tab-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* History */
+#historyView {
+  padding: 0;
+}
+
+.history-empty {
+  text-align: center;
+  padding: 2.5rem 1.25rem;
+  color: var(--text-muted);
+}
+
+.history-empty.hidden {
+  display: none;
+}
+
+.history-item {
+  padding: 0.75rem 1.25rem;
+  border-bottom: 0.0625rem solid var(--border);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.history-item:hover {
+  background: var(--bg-input);
+}
+
+.history-item:last-child {
+  border-bottom: none;
+}
+
+.history-item-title {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 0.25rem;
+}
+
+.history-item-meta {
+  display: flex;
+  gap: 0.75rem;
+  font-size: 0.6875rem;
+  color: var(--text-muted);
 }
 
 /* Sticky Bottom Actions */

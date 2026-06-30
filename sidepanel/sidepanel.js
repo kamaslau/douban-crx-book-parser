@@ -23,6 +23,12 @@ const elements = {
   pageStatus: null,
   notification: null,
   uploadedUrl: null,
+  parserView: null,
+  historyView: null,
+  historyList: null,
+  historyEmpty: null,
+  tabParser: null,
+  tabHistory: null,
 };
 
 const STORAGE_KEYS = {
@@ -34,6 +40,7 @@ let currentTabId = null;
 let lastValidBookData = null;
 let isOnDoubanPage = false;
 let _initializing = true;
+let currentView = "parser";
 
 const initElements = () => {
   elements.title = document.getElementById("title");
@@ -58,6 +65,12 @@ const initElements = () => {
   elements.pageStatus = document.getElementById("pageStatus");
   elements.notification = document.getElementById("notification");
   elements.uploadedUrl = document.getElementById("uploadedUrl");
+  elements.parserView = document.getElementById("parserView");
+  elements.historyView = document.getElementById("historyView");
+  elements.historyList = document.getElementById("historyList");
+  elements.historyEmpty = document.getElementById("historyEmpty");
+  elements.tabParser = document.querySelector('.tab[data-tab="parser"]');
+  elements.tabHistory = document.querySelector('.tab[data-tab="history"]');
 };
 
 const getFormData = () => ({
@@ -727,6 +740,121 @@ const showForm = () => {
   elements.bookForm.classList.remove("hidden");
 };
 
+// ─── History ────────────────────────────────────────────────────────────────
+
+const HISTORY_KEY = "bookHistory";
+const HISTORY_TTL_MS = 24 * 60 * 60 * 1000;
+
+const getHistory = async () => {
+  const { [HISTORY_KEY]: raw } = await chrome.storage.local.get(HISTORY_KEY);
+  return raw || {};
+};
+
+const pruneHistory = async (entries) => {
+  const cutoff = Date.now() - HISTORY_TTL_MS;
+  let changed = false;
+  for (const key of Object.keys(entries)) {
+    if (new Date(entries[key].parsedAt).getTime() < cutoff) {
+      delete entries[key];
+      changed = true;
+    }
+  }
+  if (changed) await chrome.storage.local.set({ [HISTORY_KEY]: entries });
+  return entries;
+};
+
+const saveHistoryItem = async (data) => {
+  if (!data.subjectId) return;
+  const entries = await getHistory();
+  entries[data.subjectId] = {
+    title: data.title || "",
+    isbn: data.isbn || "",
+    publishedDate: data.publishedDate || "",
+    subjectId: data.subjectId,
+    coverImageUrl: data.coverImageUrl || "",
+    publisher: data.publisher || "",
+    pageCount: data.pageCount || "",
+    form: data.form || "",
+    tagPrice: data.tagPrice || "",
+    parsedAt: new Date().toISOString(),
+  };
+  await chrome.storage.local.set({ [HISTORY_KEY]: entries });
+  await pruneHistory(entries);
+};
+
+const formatRelativeTime = (iso) => {
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
+};
+
+const renderHistory = async () => {
+  const entries = await getHistory();
+  const pruned = await pruneHistory(entries);
+  const items = Object.values(pruned).sort(
+    (a, b) => new Date(b.parsedAt).getTime() - new Date(a.parsedAt).getTime(),
+  );
+
+  elements.historyList.innerHTML = "";
+  if (items.length === 0) {
+    elements.historyEmpty.classList.remove("hidden");
+    return;
+  }
+  elements.historyEmpty.classList.add("hidden");
+
+  for (const item of items) {
+    const div = document.createElement("div");
+    div.className = "history-item";
+    div.innerHTML = `
+      <div class="history-item-title">${item.title || "Untitled"}</div>
+      <div class="history-item-meta">
+        <span>${item.isbn || "—"}</span>
+        <span>${formatRelativeTime(item.parsedAt)}</span>
+      </div>`;
+    div.addEventListener("click", () => onHistoryItemClick(item));
+    elements.historyList.appendChild(div);
+  }
+};
+
+const onHistoryItemClick = async (entry) => {
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  const isDouban = tab?.url?.startsWith("https://book.douban.com/subject/");
+
+  if (isDouban && tab.id) {
+    // Navigate to the book page, then let normal parse flow handle it
+    await chrome.tabs.update(tab.id, {
+      url: `https://book.douban.com/subject/${entry.subjectId}/`,
+    });
+    // loadBookData will fire via pageChanged; switch tab when data arrives
+  } else {
+    // Not on Douban — populate directly from history
+    populateInputs(entry);
+    showForm();
+    switchView("parser");
+  }
+};
+
+// ─── Tab View Switching ────────────────────────────────────────────────────
+
+const switchView = (name) => {
+  currentView = name;
+  elements.tabParser.classList.toggle("active", name === "parser");
+  elements.tabHistory.classList.toggle("active", name === "history");
+  elements.parserView.classList.toggle("hidden", name !== "parser");
+  elements.historyView.classList.toggle("hidden", name !== "history");
+
+  if (name === "history") renderHistory();
+};
+
+const initTabs = () => {
+  elements.tabParser?.addEventListener("click", () => switchView("parser"));
+  elements.tabHistory?.addEventListener("click", () => switchView("history"));
+};
+
 const loadBookData = async (tabId) => {
   currentTabId = tabId;
 
@@ -756,6 +884,9 @@ const loadBookData = async (tabId) => {
       isOnDoubanPage = true;
       showForm();
       updatePageStatus();
+      saveHistoryItem(response);
+      // If user clicked a history item that triggered navigation, switch back
+      if (currentView === "history") switchView("parser");
     } else {
       if (lastValidBookData) {
         // Re-populate form with cached data when fresh extraction fails
@@ -981,6 +1112,7 @@ const initSettingsAndSend = () => {
 const init = () => {
   initElements();
   initEventListeners();
+  initTabs();
   initSettingsAndSend();
   handleTabSwitch();
 };

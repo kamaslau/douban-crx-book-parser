@@ -15,126 +15,139 @@
           <h1>Douban Book</h1>
           <span id="pageStatus" class="status">Loading...</span>
         </div>
+        <nav class="tab-bar">
+          <button class="tab active" data-tab="parser">Parser</button>
+          <button class="tab" data-tab="history">History</button>
+        </nav>
       </header>
 
       <main class="main">
-        <div id="unsupportedMessage" class="unsupported hidden">
-          <div class="icon">!</div>
-          <p>Navigate to a Douban book page to extract data</p>
-          <a href="https://book.douban.com" target="_blank" class="link"
-            >book.douban.com</a
-          >
+        <div id="parserView" class="tab-content">
+          <div id="unsupportedMessage" class="unsupported hidden">
+            <div class="icon">!</div>
+            <p>Navigate to a Douban book page to extract data</p>
+            <a href="https://book.douban.com" target="_blank" class="link"
+              >book.douban.com</a
+            >
+          </div>
+
+          <form id="bookForm" class="form hidden">
+            <!-- Row 1: Subject ID (label + input same row) -->
+            <div class="field-group inline">
+              <label>豆瓣 ID</label>
+              <input
+                id="subjectId"
+                placeholder="ID"
+                readonly
+                style="text-align: end"
+              />
+            </div>
+
+            <br />
+
+            <!-- Row 2: Title (full width) -->
+            <div class="field-group">
+              <label for="title">Title</label>
+              <input id="title" placeholder="Book title" />
+            </div>
+
+            <!-- Row 3: ISBN + Published (same row) -->
+            <div class="field-row dual">
+              <div class="field-group">
+                <label>ISBN</label>
+                <input id="isbn" placeholder="ISBN" readonly />
+              </div>
+              <div class="field-group">
+                <label for="publishedDate">Published</label>
+                <input id="publishedDate" placeholder="Date" />
+              </div>
+            </div>
+
+            <!-- Row 4: Form + Pages + Tag Price (same row, in this order) -->
+            <div class="field-row triple">
+              <div class="field-group">
+                <label for="form">Form</label>
+                <input id="form" placeholder="Format" />
+              </div>
+              <div class="field-group">
+                <label for="pageCount">Pages</label>
+                <input id="pageCount" placeholder="Count" />
+              </div>
+              <div class="field-group">
+                <label for="tagPrice">Tag Price</label>
+                <input id="tagPrice" placeholder="Price" />
+              </div>
+            </div>
+
+            <!-- Row 5: Publisher (full width) -->
+            <div class="field-group">
+              <label for="publisher">Publisher</label>
+              <input id="publisher" placeholder="Publisher" />
+            </div>
+
+            <br />
+
+            <!-- Row 6: Cover URL -->
+            <div class="field-group">
+              <label>Cover URL</label>
+
+              <div class="input-with-action">
+                <input readonly id="coverImageUrl" placeholder="Image URL" />
+
+                <button
+                  title="预览"
+                  id="previewCoverBtn"
+                  type="button"
+                  class="btn-icon"
+                >
+                  🔍
+                </button>
+
+                <button
+                  title="下载"
+                  id="downloadCoverBtn"
+                  type="button"
+                  class="btn-icon"
+                >
+                  📥
+                </button>
+
+                <button
+                  title="上传"
+                  id="uploadCoverBtn"
+                  type="button"
+                  class="btn-icon"
+                >
+                  ☁️
+                </button>
+              </div>
+
+              <figure>
+                <img
+                  id="coverPreview"
+                  class="preview-image hidden"
+                  alt="cover preview"
+                  src=""
+                />
+                <figcaption>
+                  <input
+                    id="uploadedUrl"
+                    class="uploaded-url hidden"
+                    readonly
+                    placeholder="Uploaded path"
+                  />
+                </figcaption>
+              </figure>
+            </div>
+          </form>
         </div>
 
-        <form id="bookForm" class="form hidden">
-          <!-- Row 1: Subject ID (label + input same row) -->
-          <div class="field-group inline">
-            <label>豆瓣 ID</label>
-            <input
-              id="subjectId"
-              placeholder="ID"
-              readonly
-              style="text-align: end"
-            />
+        <div id="historyView" class="tab-content hidden">
+          <div id="historyList"></div>
+          <div id="historyEmpty" class="history-empty">
+            <p>No history yet</p>
           </div>
-
-          <br />
-
-          <!-- Row 2: Title (full width) -->
-          <div class="field-group">
-            <label for="title">Title</label>
-            <input id="title" placeholder="Book title" />
-          </div>
-
-          <!-- Row 3: ISBN + Published (same row) -->
-          <div class="field-row dual">
-            <div class="field-group">
-              <label>ISBN</label>
-              <input id="isbn" placeholder="ISBN" readonly />
-            </div>
-            <div class="field-group">
-              <label for="publishedDate">Published</label>
-              <input id="publishedDate" placeholder="Date" />
-            </div>
-          </div>
-
-          <!-- Row 4: Form + Pages + Tag Price (same row, in this order) -->
-          <div class="field-row triple">
-            <div class="field-group">
-              <label for="form">Form</label>
-              <input id="form" placeholder="Format" />
-            </div>
-            <div class="field-group">
-              <label for="pageCount">Pages</label>
-              <input id="pageCount" placeholder="Count" />
-            </div>
-            <div class="field-group">
-              <label for="tagPrice">Tag Price</label>
-              <input id="tagPrice" placeholder="Price" />
-            </div>
-          </div>
-
-          <!-- Row 5: Publisher (full width) -->
-          <div class="field-group">
-            <label for="publisher">Publisher</label>
-            <input id="publisher" placeholder="Publisher" />
-          </div>
-
-          <br />
-
-          <!-- Row 6: Cover URL -->
-          <div class="field-group">
-            <label>Cover URL</label>
-
-            <div class="input-with-action">
-              <input readonly id="coverImageUrl" placeholder="Image URL" />
-
-              <button
-                title="预览"
-                id="previewCoverBtn"
-                type="button"
-                class="btn-icon"
-              >
-                🔍
-              </button>
-
-              <button
-                title="下载"
-                id="downloadCoverBtn"
-                type="button"
-                class="btn-icon"
-              >
-                📥
-              </button>
-
-              <button
-                title="上传"
-                id="uploadCoverBtn"
-                type="button"
-                class="btn-icon"
-              >
-                ☁️
-              </button>
-            </div>
-
-            <figure>
-              <img
-                id="coverPreview"
-                class="preview-image hidden"
-                alt="cover preview"
-                src=""
-              />
-              <figcaption>
-                <input
-                  id="uploadedUrl"
-                  class="uploaded-url hidden"
-                  readonly
-                  placeholder="Uploaded path"
-                />
-              </figcaption>
-            </figure>
-          </div>
-        </form>
+        </div>
       </main>
 
       <!-- Sticky bottom actions -->
