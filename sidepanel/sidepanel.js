@@ -20,7 +20,7 @@ const elements = {
   sendBtn: null,
   bookForm: null,
   unsupportedMessage: null,
-  pageStatus: null,
+  parserStatus: null,
   notification: null,
   uploadedUrl: null,
   parserView: null,
@@ -57,7 +57,7 @@ const initElements = () => {
   elements.sendBtn = document.getElementById("sendBtn");
   elements.bookForm = document.getElementById("bookForm");
   elements.unsupportedMessage = document.getElementById("unsupportedMessage");
-  elements.pageStatus = document.getElementById("pageStatus");
+  elements.parserStatus = document.getElementById("parserStatus");
   elements.notification = document.getElementById("notification");
   elements.uploadedUrl = document.getElementById("uploadedUrl");
   elements.parserView = document.getElementById("parserView");
@@ -630,16 +630,16 @@ const uploadCoverImage = async () => {
 
 // ─── UI State Management ────────────────────────────────────────────────────
 
-const updatePageStatus = () => {
+const updateParserStatus = () => {
   const showLoaded = isOnDoubanPage && currentView === "parser";
   if (showLoaded) {
-    elements.pageStatus.textContent = "Book data loaded";
-    elements.pageStatus.classList.add("active");
+    elements.parserStatus.textContent = "Book data loaded";
+    elements.parserStatus.classList.add("active");
   } else {
-    elements.pageStatus.textContent = lastValidBookData
+    elements.parserStatus.textContent = lastValidBookData
       ? "Data retained"
       : "Not on Douban book page";
-    elements.pageStatus.classList.remove("active");
+    elements.parserStatus.classList.remove("active");
   }
 };
 
@@ -755,7 +755,7 @@ const switchView = (name) => {
   elements.parserView.classList.toggle("hidden", name !== "parser");
   elements.historyView.classList.toggle("hidden", name !== "history");
 
-  updatePageStatus();
+  updateParserStatus();
   if (name === "history") renderHistory();
 };
 
@@ -792,7 +792,7 @@ const loadBookData = async (tabId) => {
       populateInputs(response);
       isOnDoubanPage = true;
       showForm();
-      updatePageStatus();
+      updateParserStatus();
       saveHistoryItem(response);
       // If user clicked a history item that triggered navigation, switch back
       if (currentView === "history") switchView("parser");
@@ -802,10 +802,10 @@ const loadBookData = async (tabId) => {
         populateInputs(lastValidBookData);
         isOnDoubanPage = true;
         showForm();
-        updatePageStatus();
+        updateParserStatus();
       } else {
         isOnDoubanPage = true;
-        updatePageStatus();
+        updateParserStatus();
       }
       if (error) {
         console.warn(
@@ -817,7 +817,7 @@ const loadBookData = async (tabId) => {
   } catch (err) {
     console.error("Failed to load book data:", err);
     isOnDoubanPage = false;
-    updatePageStatus();
+    updateParserStatus();
   }
 };
 

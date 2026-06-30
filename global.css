@@ -33,11 +33,8 @@ body {
 
 input,
 textarea,
-option {
-  font-family: var(--font-sans);
-}
-
-input[readonly] {
+option,
+select {
   font-family: var(--font-mono);
 }
 
