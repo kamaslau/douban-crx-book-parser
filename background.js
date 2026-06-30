@@ -33,81 +33,46 @@ chrome.tabs.onActivated.addListener(async ({ tabId }) => {
   const tab = await chrome.tabs.get(tabId);
   if (isDoubanBookPage(tab.url)) {
     sendPageEvent("tabActivated", tabId, tab.url);
-  } else {
-    sendPageEvent("nonDoubanPage");
   }
 });
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   const { action } = request;
 
-  if (action === "getBookData") {
-    const tabId = sender.tab?.id ?? request.tabId;
+  const handlers = {
+    getBookData() {
+      const tabId = sender.tab?.id ?? request.tabId;
+      chrome.tabs.sendMessage(tabId, { action: "getBookData" }, (response) => {
+        if (chrome.runtime.lastError) {
+          sendResponse({ error: chrome.runtime.lastError.message });
+        } else {
+          sendResponse(response);
+        }
+      });
+      return true; // keep channel open for async response
+    },
 
-    chrome.tabs.sendMessage(tabId, { action: "getBookData" }, (response) => {
-      if (chrome.runtime.lastError) {
-        sendResponse({ error: chrome.runtime.lastError.message });
-      } else {
-        sendResponse(response);
-      }
-    });
-
-    return true;
-  }
-
-  if (action === "downloadImage") {
-    (async () => {
+    async downloadImage() {
       try {
         await handleImageDownload(request.dataUrl, request.fileName);
         sendResponse({ success: true });
       } catch (err) {
         sendResponse({ error: err.message });
       }
-    })();
-    return true;
-  }
+    },
 
-  if (action === "fetchImageBlob") {
-    (async () => {
+    async fetchImageBlob() {
       try {
         const dataUrl = await fetchImageAsDataURL(request.url, request.referer);
         sendResponse({ dataUrl });
       } catch (err) {
         sendResponse({ error: err.name, message: err.message });
       }
-    })();
-    return true;
-  }
+    },
+  };
 
-  if (action === "extractImageFromPage") {
-    (async () => {
-      try {
-        const [result] = await chrome.scripting.executeScript({
-          target: { tabId: request.tabId },
-          func: (imgUrl) => {
-            const img = Array.from(document.images).find((i) => {
-              if (i.src === imgUrl) return true;
-              const normalized = imgUrl.replace(/^https?:\/\//, "");
-              return i.src.includes(normalized);
-            });
-            if (!img) return null;
-
-            const canvas = document.createElement("canvas");
-            canvas.width = img.naturalWidth || img.width;
-            canvas.height = img.naturalHeight || img.height;
-            const ctx = canvas.getContext("2d");
-            ctx.drawImage(img, 0, 0);
-            return canvas.toDataURL("image/jpeg", 0.92);
-          },
-          args: [request.imgUrl],
-        });
-        sendResponse({ dataUrl: result?.result });
-      } catch (err) {
-        sendResponse({ error: err.message });
-      }
-    })();
-    return true;
-  }
+  const handler = handlers[action];
+  if (handler) return handler();
 });
 
 const handleImageDownload = async (dataUrl, fileName) => {

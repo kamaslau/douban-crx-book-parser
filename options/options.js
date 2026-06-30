@@ -10,6 +10,13 @@ const STORAGE_KEYS = {
   uploadDir: "uploadDir",
 };
 
+const readOptions = async (...keys) => {
+  const result = await chrome.storage.sync.get(keys);
+  const out = {};
+  for (const k of keys) out[k] = result[k] ?? "";
+  return out;
+};
+
 const elements = {
   remoteUrl: null,
   authToken: null,
@@ -50,7 +57,7 @@ const showStatus = (message, type = "success") => {
 
 const loadOptions = async () => {
   try {
-    const result = await chrome.storage.sync.get([
+    const values = await readOptions(
       STORAGE_KEYS.remoteUrl,
       STORAGE_KEYS.authToken,
       STORAGE_KEYS.r2AccountId,
@@ -58,27 +65,20 @@ const loadOptions = async () => {
       STORAGE_KEYS.r2ApiTokenKeySecret,
       STORAGE_KEYS.awsBucketName,
       STORAGE_KEYS.uploadDir,
-    ]);
-    const {
-      [STORAGE_KEYS.remoteUrl]: remoteUrl = "",
-      [STORAGE_KEYS.authToken]: authToken = "",
-      [STORAGE_KEYS.r2AccountId]: r2AccountId = "",
-      [STORAGE_KEYS.r2ApiTokenKeyId]: r2ApiTokenKeyId = "",
-      [STORAGE_KEYS.r2ApiTokenKeySecret]: r2ApiTokenKeySecret = "",
-      [STORAGE_KEYS.awsBucketName]: awsBucketName = "",
-      [STORAGE_KEYS.uploadDir]: uploadDir = "",
-    } = result;
+    );
 
-    elements.remoteUrl.value = remoteUrl;
-    elements.authToken.value = authToken;
-    elements.r2AccountId.value = r2AccountId;
-    elements.r2ApiTokenKeyId.value = r2ApiTokenKeyId;
-    elements.r2ApiTokenKeySecret.value = r2ApiTokenKeySecret;
-    elements.awsBucketName.value = awsBucketName;
-    elements.uploadDir.value = uploadDir;
+    elements.remoteUrl.value = values[STORAGE_KEYS.remoteUrl];
+    elements.authToken.value = values[STORAGE_KEYS.authToken];
+    elements.r2AccountId.value = values[STORAGE_KEYS.r2AccountId];
+    elements.r2ApiTokenKeyId.value = values[STORAGE_KEYS.r2ApiTokenKeyId];
+    elements.r2ApiTokenKeySecret.value =
+      values[STORAGE_KEYS.r2ApiTokenKeySecret];
+    elements.awsBucketName.value = values[STORAGE_KEYS.awsBucketName];
+    elements.uploadDir.value = values[STORAGE_KEYS.uploadDir];
     updateR2EndpointUrl();
   } catch (err) {
     console.error("Failed to load options:", err);
+    showStatus("Failed to load settings", "error");
   }
 };
 

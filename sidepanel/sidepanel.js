@@ -34,6 +34,18 @@ const elements = {
 const STORAGE_KEYS = {
   remoteUrl: "remoteUrl",
   authToken: "authToken",
+  r2AccountId: "r2AccountId",
+  r2ApiTokenKeyId: "r2ApiTokenKeyId",
+  r2ApiTokenKeySecret: "r2ApiTokenKeySecret",
+  awsBucketName: "awsBucketName",
+  uploadDir: "uploadDir",
+};
+
+const readOptions = async (...keys) => {
+  const result = await chrome.storage.sync.get(keys);
+  const out = {};
+  for (const k of keys) out[k] = result[k] ?? "";
+  return out;
 };
 
 let currentTabId = null;
@@ -74,15 +86,15 @@ const initElements = () => {
 };
 
 const getFormData = () => ({
-  title: elements.title.value,
-  isbn: elements.isbn.value,
-  publishedDate: elements.publishedDate.value,
-  subjectId: elements.subjectId.value,
-  coverImageUrl: elements.coverImageUrl.value,
-  publisher: elements.publisher.value,
-  pageCount: elements.pageCount.value,
-  form: elements.form.value,
-  tagPrice: elements.tagPrice.value,
+  title: elements.title?.value ?? "",
+  isbn: elements.isbn?.value ?? "",
+  publishedDate: elements.publishedDate?.value ?? "",
+  subjectId: elements.subjectId?.value ?? "",
+  coverImageUrl: elements.coverImageUrl?.value ?? "",
+  publisher: elements.publisher?.value ?? "",
+  pageCount: elements.pageCount?.value ?? "",
+  form: elements.form?.value ?? "",
+  tagPrice: elements.tagPrice?.value ?? "",
 });
 
 const formatPublishedAt = (data) => {
@@ -660,14 +672,13 @@ const uploadCoverImage = async () => {
   // Read R2 settings from storage
   let config;
   try {
-    const result = await chrome.storage.sync.get([
-      "r2AccountId",
-      "r2ApiTokenKeyId",
-      "r2ApiTokenKeySecret",
-      "awsBucketName",
-      "uploadDir",
-    ]);
-    config = result;
+    config = await readOptions(
+      STORAGE_KEYS.r2AccountId,
+      STORAGE_KEYS.r2ApiTokenKeyId,
+      STORAGE_KEYS.r2ApiTokenKeySecret,
+      STORAGE_KEYS.awsBucketName,
+      STORAGE_KEYS.uploadDir,
+    );
   } catch (err) {
     showNotification("Failed to load R2 settings", "error");
     return;
@@ -1037,13 +1048,13 @@ const sendToRemote = async () => {
   // Get config from storage
   let config;
   try {
-    const result = await chrome.storage.sync.get([
+    const raw = await readOptions(
       STORAGE_KEYS.remoteUrl,
       STORAGE_KEYS.authToken,
-    ]);
+    );
     config = {
-      url: result[STORAGE_KEYS.remoteUrl],
-      token: result[STORAGE_KEYS.authToken],
+      url: raw[STORAGE_KEYS.remoteUrl],
+      token: raw[STORAGE_KEYS.authToken],
     };
   } catch (err) {
     showNotification("Failed to load settings", "error");
